@@ -36,11 +36,21 @@ jobs:
           RewriteRule ^ index.html [L]
           EOF
 
+      - name: Normalize server-dir (must end with /)
+        id: ftpdir
+        run: |
+          dir="${{ secrets.FTP_SERVER_DIR }}"
+          [[ "$dir" != */ ]] && dir="${dir}/"
+          echo "value=$dir" >> "$GITHUB_OUTPUT"
+
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
+          port: 21
+          protocol: ftps
           local-dir: ./dist/
-          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          server-dir: ${{ steps.ftpdir.outputs.value }}
+          log-level: verbose
