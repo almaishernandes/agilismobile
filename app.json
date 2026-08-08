@@ -5,20 +5,52 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.agilis.input"
     },
     "android": {
+      "package": "com.agilis.input",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
+        "backgroundColor": "#004d40",
+        "foregroundImage": "./assets/android-icon-foreground.png"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Permissão para usar a câmera e escanear QR codes de cupons fiscais."
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Permissão para usar o microfone para entrada por voz."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Permissão para fotografar comprovantes."
+        }
+      ],
+      "expo-sharing"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "c153e5d9-0e27-4463-86ef-bbcd003cb60c"
+      }
+    },
+    "owner": "franciscohernandes"
   }
 }

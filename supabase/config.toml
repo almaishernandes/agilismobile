@@ -1,0 +1,4 @@
+project_id = "agilis-mobile"
+
+[functions.process-nfce]
+verify_jwt = false
