@@ -95,7 +95,7 @@ ${Object.keys(byAccount).length > 1 ? `
 </div>` : ''}
 
 <div class="footer">
-  AGILI$ • Relatório de Conferência Diária • Gerado pelo AgilisInput App<br/>
+  AGILI$ • Relatório de Conferência Diária • Gerado pelo Agilis Mobile App<br/>
   Este documento é um rascunho de conferência. Os dados serão importados após confirmação.
 </div>
 </body>

@@ -20,7 +20,7 @@ export default function LoginScreen() {
         <KeyboardAvoidingView style={s.wrap} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
             <View style={s.card}>
                 <Text style={s.logo}>💰 AGILI$</Text>
-                <Text style={s.appName}>AgilisInput</Text>
+                <Text style={s.appName}>Agilis Mobile</Text>
                 <Text style={s.sub}>Fila de Rascunhos Diários</Text>
 
                 <TextInput style={s.input} placeholder="E-mail" placeholderTextColor="#475569"
