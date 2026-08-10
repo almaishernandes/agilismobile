@@ -37,6 +37,7 @@ export function DraftProvider({ children }) {
             installments: 1,
             chave_nfce: null,
             photo_uri: null,
+            synced: false,
             date_created: new Date().toISOString(),
             ...item,
         };

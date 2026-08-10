@@ -34,9 +34,17 @@ export default function ReviewScreen({ navigation }) {
     };
 
     const handleExport = async () => {
+        const pendingCount = drafts.filter(d => !d.synced).length;
+        if (pendingCount === 0) {
+            Alert.alert('Nada a exportar', 'Todos os itens já foram enviados ao banco (ex: QR Code). O rascunho será limpo.', [
+                { text: 'Cancelar', style: 'cancel' },
+                { text: 'LIMPAR RASCUNHO', style: 'default', onPress: doExport },
+            ]);
+            return;
+        }
         Alert.alert(
             '🚀 Exportar para o AGILI$',
-            `Confirma o envio de ${drafts.length} item(ns) para o banco de dados? Após a exportação, o rascunho será limpo.`,
+            `Confirma o envio de ${pendingCount} item(ns) pendente(s) para o banco de dados? Itens de QR Code já enviados não serão duplicados. Após a exportação, o rascunho será limpo.`,
             [
                 { text: 'Cancelar', style: 'cancel' },
                 { text: 'CONFIRMAR', style: 'default', onPress: doExport },
@@ -52,9 +60,11 @@ export default function ReviewScreen({ navigation }) {
 
             const today = new Date().toISOString().split('T')[0];
 
-            // Separate by type
-            const txDrafts = drafts.filter(d => d.type === 'transaction');
-            const nfceDrafts = drafts.filter(d => d.type === 'nfce_import');
+            // Separate by type — itens já sincronizados na hora (ex: QR Code)
+            // não entram aqui de novo, só o que ainda está pendente de envio.
+            const pending = drafts.filter(d => !d.synced);
+            const txDrafts = pending.filter(d => d.type === 'transaction');
+            const nfceDrafts = pending.filter(d => d.type === 'nfce_import');
 
             // Build transaction rows (expand installments)
             const txRows = [];
@@ -125,6 +135,7 @@ export default function ReviewScreen({ navigation }) {
                         <View style={s.cardHeader}>
                             <Text style={s.cardIdx}>{idx + 1}</Text>
                             <Text style={s.cardType}>{d.type === 'nfce_import' ? '🧾 NFC-e' : '📝 Transação'}</Text>
+                            {d.synced && <Text style={s.syncedBadge}>✓ Enviado</Text>}
                             <Text style={s.cardAccount}>{d.account_name || 'Sem conta'}</Text>
                         </View>
                         <View style={s.cardBody}>
@@ -168,6 +179,7 @@ const s = StyleSheet.create({
     cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 8 },
     cardIdx: { color: '#475569', fontSize: 11, fontWeight: '700', width: 20 },
     cardType: { color: '#89962F', fontSize: 11 },
+    syncedBadge: { color: '#0f172a', backgroundColor: '#CCFF00', fontSize: 9, fontWeight: '800', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 },
     cardAccount: { flex: 1, color: 'rgba(255,255,255,0.5)', fontSize: 11, textAlign: 'right' },
     cardBody: { flexDirection: 'row', alignItems: 'flex-start' },
     cardBenef: { color: '#fff', fontWeight: '700', fontSize: 15 },

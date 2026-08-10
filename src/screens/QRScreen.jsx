@@ -61,20 +61,12 @@ export default function QRScreen({ navigation }) {
         const chave = nfceData?.chave_nfce || extractChave(scannedData);
         const emitente = nfceData?.emitente || extractEmitente(scannedData);
 
-        addDraft({
-            type: 'nfce_import',
-            account_id: account.id,
-            account_name: account.name,
-            beneficiary: emitente,
-            description: 'NFC-e via QR Code',
-            chave_nfce: chave,
-            amount: nfceData?.amount,
-        });
-
-        // Também grava em nfce_imports para aparecer em tempo real no painel
-        // web (Integração → NFC-App Agilis), que compartilha o mesmo banco.
+        // Grava em nfce_imports para aparecer em tempo real no painel web
+        // (Integração → NFC-App Agilis), que compartilha o mesmo banco. O QR
+        // Code já vem com dados completos e confiáveis, então vai direto —
+        // diferente de voz/digitação, que ficam pendentes de revisão.
         const ctx = await getSecurityContext();
-        await supabase.from('nfce_imports').insert([{
+        const { error } = await supabase.from('nfce_imports').insert([{
             chave,
             emitente_nome: emitente || 'Lido via QR Code',
             valor_total: nfceData?.amount ?? null,
@@ -83,6 +75,21 @@ export default function QRScreen({ navigation }) {
             user_id: ctx?.user_id ?? null,
             family_id: ctx?.family_id ?? null,
         }]);
+
+        if (error) {
+            Alert.alert('Aviso', 'Não foi possível enviar ao banco agora. O item foi salvo no rascunho e será reenviado ao fechar o dia.');
+        }
+
+        addDraft({
+            type: 'nfce_import',
+            account_id: account.id,
+            account_name: account.name,
+            beneficiary: emitente,
+            description: 'NFC-e via QR Code',
+            chave_nfce: chave,
+            amount: nfceData?.amount,
+            synced: !error,
+        });
 
         navigation.goBack();
     };
