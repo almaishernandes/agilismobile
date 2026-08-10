@@ -10,7 +10,6 @@
     "expo": "~57.0.2",
     "expo-av": "^16.0.8",
     "expo-camera": "~57.0.0",
-    "expo-dev-client": "^57.0.7",
     "expo-file-system": "~57.0.0",
     "expo-image-picker": "~57.0.2",
     "expo-print": "~57.0.0",
@@ -27,10 +26,8 @@
     "react-native-web": "^0.21.2"
   },
   "scripts": {
-    "start": "cross-env EXPO_NO_UPDATE_CHECK=1 expo start",
-    "dev": "cross-env EXPO_NO_UPDATE_CHECK=1 expo start",
-    "android": "cross-env EXPO_NO_UPDATE_CHECK=1 expo run:android",
-    "ios": "cross-env EXPO_NO_UPDATE_CHECK=1 expo run:ios",
+    "start": "cross-env EXPO_NO_UPDATE_CHECK=1 expo start --web",
+    "dev": "cross-env EXPO_NO_UPDATE_CHECK=1 expo start --web",
     "web": "cross-env EXPO_NO_UPDATE_CHECK=1 expo start --web"
   },
   "private": true,

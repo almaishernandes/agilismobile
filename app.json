@@ -3,6 +3,7 @@
     "name": "AgilisInput",
     "slug": "AgilisInput",
     "version": "1.0.0",
+    "scheme": "agilismobile",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
