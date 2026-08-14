@@ -43,7 +43,7 @@ const s = StyleSheet.create({
     card: { width: '100%', maxWidth: 380, backgroundColor: '#1e293b', borderRadius: 20, padding: 36, alignItems: 'center' },
     logo: { fontSize: 40, fontWeight: '900', color: '#CCFF00', letterSpacing: 2 },
     appName: { fontSize: 22, fontWeight: '900', color: '#fff', marginTop: 4, letterSpacing: 1 },
-    sub: { fontSize: 12, color: '#89962F', marginBottom: 36, marginTop: 4, letterSpacing: 0.5 },
+    sub: { fontSize: 12, color: '#89962F', marginBottom: 36, marginTop: 10, letterSpacing: 0.5 },
     input: { width: '100%', backgroundColor: '#0f172a', color: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#334155', padding: 16, fontSize: 15, marginBottom: 14 },
     error: { color: '#ff8a80', fontSize: 13, marginBottom: 12, textAlign: 'center' },
     btn: { width: '100%', backgroundColor: '#CCFF00', borderRadius: 12, padding: 18, alignItems: 'center', marginTop: 8 },

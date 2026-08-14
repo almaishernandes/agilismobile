@@ -110,7 +110,7 @@ const s = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#0f172a' },
     header: { backgroundColor: '#004d40', padding: 20, paddingTop: 60, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     logo: { color: '#CCFF00', fontSize: 20, fontWeight: '900', letterSpacing: 1 },
-    headerSub: { color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 2 },
+    headerSub: { color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 8 },
     logoutBtn: { padding: 8 },
     logoutText: { color: '#CCFF00', fontSize: 13 },
 
