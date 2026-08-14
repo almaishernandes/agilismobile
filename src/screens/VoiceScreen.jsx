@@ -107,7 +107,7 @@ export default function VoiceScreen({ navigation }) {
                 </Text>
 
                 <Text style={s.fieldLabel}>Fornecedor</Text>
-                <BeneficiaryPicker value={beneficiary} onChange={setBeneficiaryOverride} placeholder="aguardando..." />
+                <BeneficiaryPicker value={beneficiary} onChange={setBeneficiaryOverride} />
 
                 <Text style={s.fieldLabel}>Conta</Text>
                 <AccountPicker selected={account} onSelect={setAccount} />

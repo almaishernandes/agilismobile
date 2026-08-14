@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Activity
 import { supabase } from '../lib/supabase';
 import BottomSheet from './BottomSheet';
 
-export default function BeneficiaryPicker({ value, onChange, placeholder = 'Ex: Supermercado Extra' }) {
+export default function BeneficiaryPicker({ value, onChange, placeholder = 'Selecionar fornecedor' }) {
     const [beneficiaries, setBeneficiaries] = useState([]);
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -92,7 +92,7 @@ export default function BeneficiaryPicker({ value, onChange, placeholder = 'Ex: 
 const s = StyleSheet.create({
     selector: { backgroundColor: '#0f172a', borderRadius: 10, borderWidth: 1, borderColor: '#334155', padding: 12, flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
     selectorText: { flex: 1, color: '#fff', fontSize: 16 },
-    selectorPlaceholder: { flex: 1, color: '#475569', fontSize: 16 },
+    selectorPlaceholder: { flex: 1, color: '#fff', fontSize: 16, fontWeight: '700' },
     arrow: { color: '#CCFF00', fontSize: 20 },
     sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingBottom: 12 },
     sheetTitle: { color: '#CCFF00', fontWeight: '800', fontSize: 16 },
