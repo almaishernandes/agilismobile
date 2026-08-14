@@ -77,8 +77,7 @@ export default function VoiceScreen({ navigation }) {
                 onPress={toggleListening}
                 activeOpacity={0.85}
             >
-                <Text style={s.micIcon}>{listening ? '⏺' : '🎤'}</Text>
-                <Text style={s.micLabel}>{listening ? 'Parar' : 'Iniciar'}</Text>
+                <Text style={s.micIcon}>🎤</Text>
             </TouchableOpacity>
 
             {unsupported && (
@@ -147,8 +146,7 @@ const s = StyleSheet.create({
     hint: { color: 'rgba(255,255,255,0.55)', fontSize: 13, lineHeight: 18, marginHorizontal: 16, marginBottom: 12 },
     micBtn: { alignSelf: 'center', marginBottom: 16, backgroundColor: '#1e293b', borderRadius: 50, width: 88, height: 88, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#004d40' },
     micBtnActive: { backgroundColor: '#7f1d1d', borderColor: '#ef4444' },
-    micIcon: { fontSize: 28, marginBottom: 2 },
-    micLabel: { color: '#fff', fontSize: 9, textAlign: 'center' },
+    micIcon: { fontSize: 32 },
     unsupportedText: { color: '#f59e0b', fontSize: 12, marginHorizontal: 16, marginBottom: 12, lineHeight: 18 },
     section: { marginHorizontal: 16, marginBottom: 20, backgroundColor: '#1e293b', borderRadius: 16, padding: 20 },
     sectionLabel: { color: '#89962F', fontSize: 11, letterSpacing: 1, marginBottom: 12 },
