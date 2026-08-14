@@ -127,19 +127,19 @@ export default function HomeScreen({ navigation }) {
 
 const s = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#0f172a' },
-    header: { backgroundColor: '#004d40', padding: 20, paddingTop: 60, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    logo: { color: '#CCFF00', fontSize: 20, fontWeight: '900', letterSpacing: 1 },
-    headerSub: { color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 8 },
+    header: { backgroundColor: '#004d40', paddingHorizontal: 20, paddingVertical: 14, paddingTop: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    logo: { color: '#CCFF00', fontSize: 18, fontWeight: '900', letterSpacing: 1 },
+    headerSub: { color: 'rgba(255,255,255,0.6)', fontSize: 11, marginTop: 4 },
     logoutBtn: { padding: 8 },
     logoutText: { color: '#CCFF00', fontSize: 13 },
 
-    quickBtns: { flexDirection: 'row', padding: 16, gap: 10 },
-    qBtn: { flex: 1, borderRadius: 16, padding: 20, alignItems: 'center', justifyContent: 'center', minHeight: 90, borderWidth: 1 },
+    quickBtns: { flexDirection: 'row', padding: 12, gap: 8 },
+    qBtn: { flex: 1, borderRadius: 12, padding: 10, alignItems: 'center', justifyContent: 'center', minHeight: 60, borderWidth: 1 },
     qBtnActive: { borderColor: '#CCFF00', borderWidth: 2, backgroundColor: '#263a1e' },
     qBtnQR: { backgroundColor: '#1e293b', borderColor: '#004d40' },
     qBtnVoice: { backgroundColor: '#1e293b', borderColor: '#89962F' },
     qBtnManual: { backgroundColor: '#1e293b', borderColor: '#334155' },
-    qIcon: { fontSize: 26, marginBottom: 6 },
+    qIcon: { fontSize: 18, marginBottom: 3 },
     qLabel: { color: '#fff', fontSize: 11, fontWeight: '700', textAlign: 'center', lineHeight: 15 },
 
     summaryCard: { marginHorizontal: 16, backgroundColor: '#004d40', borderRadius: 14, padding: 18, marginBottom: 4 },

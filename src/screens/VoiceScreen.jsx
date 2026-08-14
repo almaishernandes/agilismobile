@@ -78,33 +78,28 @@ export default function VoiceScreen({ navigation }) {
                 activeOpacity={0.85}
             >
                 <Text style={s.micIcon}>{listening ? '⏺' : '🎤'}</Text>
-                <Text style={s.micLabel}>{listening ? 'Ouvindo... toque para parar' : 'Toque para falar'}</Text>
+                <Text style={s.micLabel}>{listening ? 'Parar' : 'Iniciar'}</Text>
             </TouchableOpacity>
 
             {unsupported && (
-                <Text style={s.unsupportedText}>
-                    Reconhecimento de voz não disponível neste navegador. Digite a frase manualmente abaixo.
-                </Text>
+                <View style={s.section}>
+                    <Text style={s.unsupportedText}>
+                        Reconhecimento de voz não disponível neste navegador. Digite a frase manualmente:
+                    </Text>
+                    <TextInput
+                        style={s.transcriptInput}
+                        value={transcript}
+                        onChangeText={setTranscript}
+                        placeholder="Ex: cinquenta reais no mercado no débito"
+                        placeholderTextColor="#475569"
+                        multiline
+                        numberOfLines={2}
+                    />
+                </View>
             )}
 
-            {/* Live transcript */}
+            {/* Fields updating live from the fala */}
             <View style={s.section}>
-                <Text style={s.sectionLabel}>Frase (ao vivo — edite se necessário)</Text>
-                <TextInput
-                    style={s.transcriptInput}
-                    value={transcript}
-                    onChangeText={setTranscript}
-                    placeholder="Aguardando fala..."
-                    placeholderTextColor="#475569"
-                    multiline
-                    numberOfLines={2}
-                />
-            </View>
-
-            {/* Fields updating live from the transcript */}
-            <View style={s.section}>
-                <Text style={s.sectionLabel}>Campos identificados</Text>
-
                 <Text style={s.fieldLabel}>Valor (R$)</Text>
                 <Text style={[s.field, s.fieldReadonly, !parsed.amount && s.fieldWaiting]}>
                     {parsed.amount ? parsed.amount.toFixed(2).replace('.', ',') : 'aguardando...'}
@@ -115,7 +110,10 @@ export default function VoiceScreen({ navigation }) {
                     {parsed.beneficiary || 'aguardando...'}
                 </Text>
 
-                <Text style={s.fieldLabel}>Descrição</Text>
+                <Text style={s.fieldLabel}>Conta</Text>
+                <AccountPicker selected={account} onSelect={setAccount} />
+
+                <Text style={s.fieldLabel}>Descrição do que comprou</Text>
                 <Text style={[s.field, s.fieldReadonly, !parsed.description && s.fieldWaiting]}>
                     {parsed.description || 'aguardando...'}
                 </Text>
@@ -126,10 +124,7 @@ export default function VoiceScreen({ navigation }) {
                     </View>
                 ) : null}
 
-                <Text style={s.fieldLabel}>Conta</Text>
-                <AccountPicker selected={account} onSelect={setAccount} />
-
-                <Text style={s.fieldLabel}>Parcelas</Text>
+                <Text style={s.fieldLabel}>Número de parcelas</Text>
                 <TextInput style={s.input} value={installments} onChangeText={setInstallments}
                     placeholder="1" placeholderTextColor="#475569" keyboardType="number-pad" />
                 <Text style={s.installHint}>
@@ -150,10 +145,10 @@ const s = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#0f172a' },
     content: { paddingBottom: 40, paddingTop: 16 },
     hint: { color: 'rgba(255,255,255,0.55)', fontSize: 13, lineHeight: 18, marginHorizontal: 16, marginBottom: 12 },
-    micBtn: { margin: 16, marginTop: 0, backgroundColor: '#1e293b', borderRadius: 20, padding: 28, alignItems: 'center', borderWidth: 2, borderColor: '#004d40' },
+    micBtn: { alignSelf: 'center', marginBottom: 16, backgroundColor: '#1e293b', borderRadius: 50, width: 88, height: 88, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#004d40' },
     micBtnActive: { backgroundColor: '#7f1d1d', borderColor: '#ef4444' },
-    micIcon: { fontSize: 44, marginBottom: 10 },
-    micLabel: { color: '#fff', fontSize: 13, textAlign: 'center' },
+    micIcon: { fontSize: 28, marginBottom: 2 },
+    micLabel: { color: '#fff', fontSize: 9, textAlign: 'center' },
     unsupportedText: { color: '#f59e0b', fontSize: 12, marginHorizontal: 16, marginBottom: 12, lineHeight: 18 },
     section: { marginHorizontal: 16, marginBottom: 20, backgroundColor: '#1e293b', borderRadius: 16, padding: 20 },
     sectionLabel: { color: '#89962F', fontSize: 11, letterSpacing: 1, marginBottom: 12 },
