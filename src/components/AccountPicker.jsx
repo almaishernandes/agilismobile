@@ -60,7 +60,7 @@ export default function AccountPicker({ selected, onSelect }) {
 }
 
 const s = StyleSheet.create({
-    selector: { backgroundColor: '#0f172a', borderRadius: 10, borderWidth: 1, borderColor: '#334155', padding: 14, flexDirection: 'row', alignItems: 'center', marginTop: 4 },
+    selector: { backgroundColor: '#0f172a', borderRadius: 10, borderWidth: 1, borderColor: '#334155', padding: 12, flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
     selectorText: { flex: 1, color: '#fff', fontSize: 15 },
     arrow: { color: '#CCFF00', fontSize: 20 },
     sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#334155' },

@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView 
 import { parseVoicePhrase } from '../lib/voiceParser';
 import { useDrafts } from '../context/DraftContext';
 import AccountPicker from '../components/AccountPicker';
+import BeneficiaryPicker from '../components/BeneficiaryPicker';
 
 const SpeechRecognitionAPI =
     typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
@@ -14,10 +15,12 @@ export default function VoiceScreen({ navigation }) {
     const [transcript, setTranscript] = useState('');
     const [account, setAccount] = useState(null);
     const [installments, setInstallments] = useState('1');
+    const [beneficiaryOverride, setBeneficiaryOverride] = useState(null);
     const [unsupported, setUnsupported] = useState(!SpeechRecognitionAPI);
     const recognitionRef = useRef(null);
 
     const parsed = parseVoicePhrase(transcript);
+    const beneficiary = beneficiaryOverride ?? parsed.beneficiary;
 
     useEffect(() => {
         if (!SpeechRecognitionAPI) return;
@@ -47,6 +50,7 @@ export default function VoiceScreen({ navigation }) {
             setListening(false);
         } else {
             setTranscript('');
+            setBeneficiaryOverride(null);
             recognitionRef.current?.start();
             setListening(true);
         }
@@ -60,7 +64,7 @@ export default function VoiceScreen({ navigation }) {
             account_id: account.id,
             account_name: account.name,
             amount: parsed.amount,
-            beneficiary: parsed.beneficiary,
+            beneficiary,
             description: parsed.description,
             installments: parseInt(installments) || 1,
         });
@@ -103,9 +107,7 @@ export default function VoiceScreen({ navigation }) {
                 </Text>
 
                 <Text style={s.fieldLabel}>Fornecedor</Text>
-                <Text style={[s.field, s.fieldReadonly, !parsed.beneficiary && s.fieldWaiting]}>
-                    {parsed.beneficiary || 'aguardando...'}
-                </Text>
+                <BeneficiaryPicker value={beneficiary} onChange={setBeneficiaryOverride} placeholder="aguardando..." />
 
                 <Text style={s.fieldLabel}>Conta</Text>
                 <AccountPicker selected={account} onSelect={setAccount} />

@@ -47,12 +47,12 @@ export default function ManualScreen({ navigation }) {
                 <Text style={s.label}>Fornecedor</Text>
                 <BeneficiaryPicker value={beneficiary} onChange={setBeneficiary} />
 
+                <Text style={s.label}>Conta *</Text>
+                <AccountPicker selected={account} onSelect={setAccount} />
+
                 <Text style={s.label}>Descrição</Text>
                 <TextInput style={s.input} value={description} onChangeText={setDescription}
                     placeholder="Ex: Compras do mês" placeholderTextColor="#475569" />
-
-                <Text style={s.label}>Conta *</Text>
-                <AccountPicker selected={account} onSelect={setAccount} />
 
                 <Text style={s.label}>Parcelas</Text>
                 <TextInput style={s.input} value={installments} onChangeText={setInstallments}
@@ -75,10 +75,10 @@ const s = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#0f172a' },
     content: { paddingBottom: 40, paddingTop: 16 },
     form: { margin: 16, marginTop: 0, backgroundColor: '#1e293b', borderRadius: 16, padding: 20 },
-    label: { color: '#89962F', fontSize: 11, letterSpacing: 1, marginTop: 16, marginBottom: 6 },
-    input: { backgroundColor: '#0f172a', color: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#334155', padding: 14, fontSize: 16 },
-    inputAmount: { fontSize: 36, fontWeight: '900', color: '#CCFF00', textAlign: 'center', padding: 20, letterSpacing: 2 },
-    fieldHint: { color: '#89962F', fontSize: 12, marginTop: 6 },
+    label: { color: '#89962F', fontSize: 11, letterSpacing: 1, marginTop: 0, marginBottom: 2 },
+    input: { backgroundColor: '#0f172a', color: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#334155', padding: 12, fontSize: 16, marginBottom: 8 },
+    inputAmount: { fontSize: 36, fontWeight: '900', color: '#CCFF00', textAlign: 'center', padding: 16, letterSpacing: 2 },
+    fieldHint: { color: '#89962F', fontSize: 12, marginTop: 2 },
     saveBtn: { margin: 16, backgroundColor: '#CCFF00', borderRadius: 14, padding: 20, alignItems: 'center' },
     saveBtnText: { color: '#0f172a', fontWeight: '900', fontSize: 17 },
 });

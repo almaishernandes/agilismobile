@@ -90,7 +90,7 @@ export default function BeneficiaryPicker({ value, onChange, placeholder = 'Ex: 
 }
 
 const s = StyleSheet.create({
-    selector: { backgroundColor: '#0f172a', borderRadius: 10, borderWidth: 1, borderColor: '#334155', padding: 14, flexDirection: 'row', alignItems: 'center' },
+    selector: { backgroundColor: '#0f172a', borderRadius: 10, borderWidth: 1, borderColor: '#334155', padding: 12, flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
     selectorText: { flex: 1, color: '#fff', fontSize: 16 },
     selectorPlaceholder: { flex: 1, color: '#475569', fontSize: 16 },
     arrow: { color: '#CCFF00', fontSize: 20 },
