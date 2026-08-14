@@ -21,7 +21,7 @@ export default function LoginScreen() {
             <View style={s.card}>
                 <Text style={s.logo}>💰 AGILI$</Text>
                 <Text style={s.appName}>Agilis Mobile</Text>
-                <Text style={s.sub}>Fila de Rascunhos Diários</Text>
+                <Text style={s.sub}>Movimentação/Lançamentos</Text>
 
                 <TextInput style={s.input} placeholder="E-mail" placeholderTextColor="#475569"
                     value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />

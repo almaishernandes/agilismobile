@@ -23,7 +23,7 @@ export default function HomeScreen({ navigation }) {
             <View style={s.header}>
                 <View>
                     <Text style={s.logo}>💰 Agilis Mobile</Text>
-                    <Text style={s.headerSub}>Fila de Rascunhos do Dia</Text>
+                    <Text style={s.headerSub}>Movimentação/Lançamentos</Text>
                 </View>
                 <TouchableOpacity onPress={signOut} style={s.logoutBtn}>
                     <Text style={s.logoutText}>Sair</Text>
