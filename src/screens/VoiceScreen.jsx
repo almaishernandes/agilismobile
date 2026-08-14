@@ -4,6 +4,8 @@ import { parseVoicePhrase } from '../lib/voiceParser';
 import { useDrafts } from '../context/DraftContext';
 import AccountPicker from '../components/AccountPicker';
 import BeneficiaryPicker from '../components/BeneficiaryPicker';
+import { getSecurityContext } from '../lib/auth';
+import { insertTransaction } from '../lib/transactionSync';
 
 const SpeechRecognitionAPI =
     typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
@@ -16,6 +18,7 @@ export default function VoiceScreen({ navigation }) {
     const [account, setAccount] = useState(null);
     const [installments, setInstallments] = useState('1');
     const [beneficiaryOverride, setBeneficiaryOverride] = useState(null);
+    const [saving, setSaving] = useState(false);
     const [unsupported, setUnsupported] = useState(!SpeechRecognitionAPI);
     const recognitionRef = useRef(null);
 
@@ -56,9 +59,26 @@ export default function VoiceScreen({ navigation }) {
         }
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!parsed.amount) { Alert.alert('Valor não identificado. Fale ou ajuste o valor antes de salvar.'); return; }
         if (!account) { Alert.alert('Selecione uma conta antes de salvar.'); return; }
+
+        setSaving(true);
+        const n = parseInt(installments) || 1;
+        const ctx = await getSecurityContext();
+        const { error } = await insertTransaction(ctx, {
+            account_id: account.id,
+            amount: parsed.amount,
+            beneficiary,
+            description: parsed.description,
+            installments: n,
+        });
+        setSaving(false);
+
+        if (error) {
+            Alert.alert('Aviso', 'Não foi possível gravar no banco agora. O item foi salvo no rascunho e será reenviado ao fechar o dia.');
+        }
+
         addDraft({
             type: 'transaction',
             account_id: account.id,
@@ -66,7 +86,8 @@ export default function VoiceScreen({ navigation }) {
             amount: parsed.amount,
             beneficiary,
             description: parsed.description,
-            installments: parseInt(installments) || 1,
+            installments: n,
+            synced: !error,
         });
         navigation.goBack();
     };
@@ -132,8 +153,8 @@ export default function VoiceScreen({ navigation }) {
                         : 'Parcela única'}
                 </Text>
 
-                <TouchableOpacity style={s.saveBtn} onPress={handleSave}>
-                    <Text style={s.saveBtnText}>Incluir</Text>
+                <TouchableOpacity style={s.saveBtn} onPress={handleSave} disabled={saving}>
+                    <Text style={s.saveBtnText}>{saving ? 'Gravando...' : 'Incluir'}</Text>
                 </TouchableOpacity>
             </View>
         </ScrollView>

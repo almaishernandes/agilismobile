@@ -3,6 +3,8 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert 
 import { useDrafts } from '../context/DraftContext';
 import AccountPicker from '../components/AccountPicker';
 import BeneficiaryPicker from '../components/BeneficiaryPicker';
+import { getSecurityContext } from '../lib/auth';
+import { insertTransaction } from '../lib/transactionSync';
 
 export default function ManualScreen({ navigation }) {
     const { addDraft } = useDrafts();
@@ -11,11 +13,22 @@ export default function ManualScreen({ navigation }) {
     const [beneficiary, setBeneficiary] = useState('');
     const [description, setDescription] = useState('');
     const [installments, setInstallments] = useState('1');
+    const [saving, setSaving] = useState(false);
 
-    const handleSave = () => {
+    const handleSave = async () => {
         const a = parseFloat(amount.replace(',', '.'));
         if (!a || a <= 0) { Alert.alert('Informe um valor válido.'); return; }
         if (!account) { Alert.alert('Selecione uma conta.'); return; }
+
+        setSaving(true);
+        const n = parseInt(installments) || 1;
+        const ctx = await getSecurityContext();
+        const { error } = await insertTransaction(ctx, { account_id: account.id, amount: a, beneficiary, description, installments: n });
+        setSaving(false);
+
+        if (error) {
+            Alert.alert('Aviso', 'Não foi possível gravar no banco agora. O item foi salvo no rascunho e será reenviado ao fechar o dia.');
+        }
 
         addDraft({
             type: 'transaction',
@@ -24,7 +37,8 @@ export default function ManualScreen({ navigation }) {
             amount: a,
             beneficiary,
             description,
-            installments: parseInt(installments) || 1,
+            installments: n,
+            synced: !error,
         });
         navigation.goBack();
     };
@@ -64,8 +78,8 @@ export default function ManualScreen({ navigation }) {
                 </Text>
             </View>
 
-            <TouchableOpacity style={s.saveBtn} onPress={handleSave} activeOpacity={0.85}>
-                <Text style={s.saveBtnText}>Incluir</Text>
+            <TouchableOpacity style={s.saveBtn} onPress={handleSave} activeOpacity={0.85} disabled={saving}>
+                <Text style={s.saveBtnText}>{saving ? 'Gravando...' : 'Incluir'}</Text>
             </TouchableOpacity>
         </ScrollView>
     );
