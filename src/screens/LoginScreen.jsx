@@ -39,7 +39,7 @@ export default function LoginScreen() {
 }
 
 const s = StyleSheet.create({
-    wrap: { flex: 1, backgroundColor: '#0f172a', justifyContent: 'center', alignItems: 'center', padding: 24 },
+    wrap: { flex: 1, width: '100%', backgroundColor: '#0f172a', justifyContent: 'center', alignItems: 'center', padding: 24, boxSizing: 'border-box' },
     card: { width: '100%', maxWidth: 380, backgroundColor: '#1e293b', borderRadius: 20, padding: 36, alignItems: 'center' },
     logo: { fontSize: 40, fontWeight: '900', color: '#CCFF00', letterSpacing: 2 },
     appName: { fontSize: 22, fontWeight: '900', color: '#fff', marginTop: 4, letterSpacing: 1 },
