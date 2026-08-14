@@ -1,14 +1,24 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useDrafts } from '../context/DraftContext';
 import { signOut } from '../lib/auth';
+import QRScreen from './QRScreen';
+import VoiceScreen from './VoiceScreen';
+import ManualScreen from './ManualScreen';
 
 function fmtBRL(n) {
     return `R$ ${Number(n || 0).toFixed(2).replace('.', ',')}`;
 }
 
+const TABS = {
+    qr: { label: 'QR Code\n/ Foto', icon: '📷', style: 'qBtnQR', Component: QRScreen },
+    voice: { label: 'Voz', icon: '🎤', style: 'qBtnVoice', Component: VoiceScreen },
+    manual: { label: 'Digitação', icon: '📝', style: 'qBtnManual', Component: ManualScreen },
+};
+
 export default function HomeScreen({ navigation }) {
     const { drafts, totalAmount, removeDraft } = useDrafts();
+    const [activeTab, setActiveTab] = useState(null);
 
     const handleDelete = (id) => {
         Alert.alert('Remover', 'Deseja remover este rascunho?', [
@@ -16,6 +26,10 @@ export default function HomeScreen({ navigation }) {
             { text: 'Remover', style: 'destructive', onPress: () => removeDraft(id) },
         ]);
     };
+
+    const toggleTab = (key) => setActiveTab(prev => (prev === key ? null : key));
+
+    const ActiveComponent = activeTab ? TABS[activeTab].Component : null;
 
     return (
         <View style={s.container}>
@@ -30,78 +44,83 @@ export default function HomeScreen({ navigation }) {
                 </TouchableOpacity>
             </View>
 
-            {/* 3 Quick-entry buttons */}
+            {/* 3 Quick-entry tabs */}
             <View style={s.quickBtns}>
-                <TouchableOpacity style={[s.qBtn, s.qBtnQR]} onPress={() => navigation.navigate('QRScan')} activeOpacity={0.8}>
-                    <Text style={s.qIcon}>📷</Text>
-                    <Text style={s.qLabel}>QR Code{'\n'}/ Foto</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[s.qBtn, s.qBtnVoice]} onPress={() => navigation.navigate('Voice')} activeOpacity={0.8}>
-                    <Text style={s.qIcon}>🎤</Text>
-                    <Text style={s.qLabel}>Voz</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[s.qBtn, s.qBtnManual]} onPress={() => navigation.navigate('Manual')} activeOpacity={0.8}>
-                    <Text style={s.qIcon}>📝</Text>
-                    <Text style={s.qLabel}>Digitação</Text>
-                </TouchableOpacity>
+                {Object.entries(TABS).map(([key, tab]) => (
+                    <TouchableOpacity
+                        key={key}
+                        style={[s.qBtn, s[tab.style], activeTab === key && s.qBtnActive]}
+                        onPress={() => toggleTab(key)}
+                        activeOpacity={0.8}
+                    >
+                        <Text style={s.qIcon}>{tab.icon}</Text>
+                        <Text style={s.qLabel}>{tab.label}</Text>
+                    </TouchableOpacity>
+                ))}
             </View>
 
-            {/* Draft summary card */}
-            <View style={s.summaryCard}>
-                <View style={s.summaryRow}>
-                    <View>
-                        <Text style={s.summaryLabel}>Rascunhos pendentes</Text>
-                        <Text style={s.summaryCount}>{drafts.length} {drafts.length === 1 ? 'item' : 'itens'}</Text>
-                    </View>
-                    <View style={{ alignItems: 'flex-end' }}>
-                        <Text style={s.summaryLabel}>Total acumulado</Text>
-                        <Text style={s.summaryTotal}>{fmtBRL(totalAmount)}</Text>
-                    </View>
-                </View>
-            </View>
-
-            {/* Draft list */}
-            <ScrollView style={s.list} contentContainerStyle={{ paddingBottom: 120 }}>
-                {drafts.length === 0 ? (
-                    <View style={s.emptyState}>
-                        <Text style={s.emptyIcon}>📋</Text>
-                        <Text style={s.emptyText}>Nenhum rascunho ainda.{'\n'}Adicione lançamentos acima.</Text>
-                    </View>
-                ) : (
-                    drafts.map(d => (
-                        <View key={d.id} style={s.draftCard}>
-                            <View style={s.draftLeft}>
-                                <Text style={s.draftType}>
-                                    {d.type === 'nfce_import' ? '🧾 NFC-e' : d.chave_nfce ? '🧾' : d.photo_uri ? '📷' : '📝'}
-                                </Text>
-                                <View>
-                                    <Text style={s.draftBenef}>{d.beneficiary || d.chave_nfce || 'Sem fornecedor'}</Text>
-                                    <Text style={s.draftDesc}>{d.description || d.account_name || ''}</Text>
-                                    {d.installments > 1 && <Text style={s.draftInstall}>{d.installments}x parcelas</Text>}
-                                </View>
+            {ActiveComponent ? (
+                <ActiveComponent navigation={{ goBack: () => setActiveTab(null) }} />
+            ) : (
+                <>
+                    {/* Draft summary card */}
+                    <View style={s.summaryCard}>
+                        <View style={s.summaryRow}>
+                            <View>
+                                <Text style={s.summaryLabel}>Rascunhos pendentes</Text>
+                                <Text style={s.summaryCount}>{drafts.length} {drafts.length === 1 ? 'item' : 'itens'}</Text>
                             </View>
-                            <View style={s.draftRight}>
-                                <Text style={s.draftAmount}>{d.amount ? fmtBRL(d.amount) : '—'}</Text>
-                                <TouchableOpacity onPress={() => handleDelete(d.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                                    <Text style={s.draftDel}>✕</Text>
-                                </TouchableOpacity>
+                            <View style={{ alignItems: 'flex-end' }}>
+                                <Text style={s.summaryLabel}>Total acumulado</Text>
+                                <Text style={s.summaryTotal}>{fmtBRL(totalAmount)}</Text>
                             </View>
                         </View>
-                    ))
-                )}
-            </ScrollView>
+                    </View>
 
-            {/* Close day button */}
-            <View style={s.footer}>
-                <TouchableOpacity
-                    style={[s.closeBtn, drafts.length === 0 && s.closeBtnDisabled]}
-                    disabled={drafts.length === 0}
-                    onPress={() => navigation.navigate('Review')}
-                    activeOpacity={0.85}
-                >
-                    <Text style={s.closeBtnText}>📄 Fechar Dia e Gerar PDF de Conferência</Text>
-                </TouchableOpacity>
-            </View>
+                    {/* Draft list */}
+                    <ScrollView style={s.list} contentContainerStyle={{ paddingBottom: 120 }}>
+                        {drafts.length === 0 ? (
+                            <View style={s.emptyState}>
+                                <Text style={s.emptyIcon}>📋</Text>
+                                <Text style={s.emptyText}>Nenhum rascunho ainda.{'\n'}Adicione lançamentos acima.</Text>
+                            </View>
+                        ) : (
+                            drafts.map(d => (
+                                <View key={d.id} style={s.draftCard}>
+                                    <View style={s.draftLeft}>
+                                        <Text style={s.draftType}>
+                                            {d.type === 'nfce_import' ? '🧾 NFC-e' : d.chave_nfce ? '🧾' : d.photo_uri ? '📷' : '📝'}
+                                        </Text>
+                                        <View>
+                                            <Text style={s.draftBenef}>{d.beneficiary || d.chave_nfce || 'Sem fornecedor'}</Text>
+                                            <Text style={s.draftDesc}>{d.description || d.account_name || ''}</Text>
+                                            {d.installments > 1 && <Text style={s.draftInstall}>{d.installments}x parcelas</Text>}
+                                        </View>
+                                    </View>
+                                    <View style={s.draftRight}>
+                                        <Text style={s.draftAmount}>{d.amount ? fmtBRL(d.amount) : '—'}</Text>
+                                        <TouchableOpacity onPress={() => handleDelete(d.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                                            <Text style={s.draftDel}>✕</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            ))
+                        )}
+                    </ScrollView>
+
+                    {/* Close day button */}
+                    <View style={s.footer}>
+                        <TouchableOpacity
+                            style={[s.closeBtn, drafts.length === 0 && s.closeBtnDisabled]}
+                            disabled={drafts.length === 0}
+                            onPress={() => navigation.navigate('Review')}
+                            activeOpacity={0.85}
+                        >
+                            <Text style={s.closeBtnText}>📄 Fechar Dia e Gerar PDF de Conferência</Text>
+                        </TouchableOpacity>
+                    </View>
+                </>
+            )}
         </View>
     );
 }
@@ -116,6 +135,7 @@ const s = StyleSheet.create({
 
     quickBtns: { flexDirection: 'row', padding: 16, gap: 10 },
     qBtn: { flex: 1, borderRadius: 16, padding: 20, alignItems: 'center', justifyContent: 'center', minHeight: 90, borderWidth: 1 },
+    qBtnActive: { borderColor: '#CCFF00', borderWidth: 2, backgroundColor: '#263a1e' },
     qBtnQR: { backgroundColor: '#1e293b', borderColor: '#004d40' },
     qBtnVoice: { backgroundColor: '#1e293b', borderColor: '#89962F' },
     qBtnManual: { backgroundColor: '#1e293b', borderColor: '#334155' },

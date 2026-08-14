@@ -7,9 +7,6 @@ import { DraftProvider } from '../context/DraftContext';
 
 import LoginScreen from '../screens/LoginScreen';
 import HomeScreen from '../screens/HomeScreen';
-import VoiceScreen from '../screens/VoiceScreen';
-import QRScreen from '../screens/QRScreen';
-import ManualScreen from '../screens/ManualScreen';
 import ReviewScreen from '../screens/ReviewScreen';
 
 const Stack = createStackNavigator();
@@ -45,9 +42,6 @@ export default function AppNavigator() {
                     ) : (
                         <>
                             <Stack.Screen name="Home" component={HomeScreen} />
-                            <Stack.Screen name="Voice" component={VoiceScreen} />
-                            <Stack.Screen name="QRScan" component={QRScreen} />
-                            <Stack.Screen name="Manual" component={ManualScreen} />
                             <Stack.Screen name="Review" component={ReviewScreen} />
                         </>
                     )}

@@ -121,11 +121,8 @@ export default function QRScreen({ navigation }) {
 
     return (
         <ScrollView style={s.container} contentContainerStyle={{ flexGrow: 1 }}>
-            {/* Header */}
+            {/* Mode toggle */}
             <View style={s.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()}><Text style={s.back}>‹ Voltar</Text></TouchableOpacity>
-                <Text style={s.title}>📷 Ler QR Code / Foto</Text>
-                {/* Mode toggle */}
                 <View style={s.tabs}>
                     <TouchableOpacity style={[s.tab, mode === 'qr' && s.tabActive]} onPress={() => { setMode('qr'); setScanned(false); }}>
                         <Text style={[s.tabText, mode === 'qr' && s.tabTextActive]}>QR Code</Text>
@@ -212,9 +209,7 @@ export default function QRScreen({ navigation }) {
 
 const s = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#0f172a' },
-    header: { backgroundColor: '#004d40', padding: 20, paddingTop: 60 },
-    back: { color: '#CCFF00', fontSize: 16, marginBottom: 8 },
-    title: { color: '#fff', fontWeight: '900', fontSize: 22, marginBottom: 12 },
+    header: { backgroundColor: '#0f172a', padding: 16, paddingBottom: 8 },
     tabs: { flexDirection: 'row', gap: 8 },
     tab: { paddingVertical: 6, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
     tabActive: { backgroundColor: '#CCFF00', borderColor: '#CCFF00' },

@@ -1,58 +1,59 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
-import { Audio } from 'expo-av';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
 import { parseVoicePhrase } from '../lib/voiceParser';
 import { useDrafts } from '../context/DraftContext';
 import AccountPicker from '../components/AccountPicker';
-import BeneficiaryPicker from '../components/BeneficiaryPicker';
+
+const SpeechRecognitionAPI =
+    typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
 
 export default function VoiceScreen({ navigation }) {
     const { addDraft } = useDrafts();
 
-    const [recording, setRecording] = useState(null);
     const [listening, setListening] = useState(false);
     const [transcript, setTranscript] = useState('');
-    const [parsed, setParsed] = useState(null);
     const [account, setAccount] = useState(null);
     const [installments, setInstallments] = useState('1');
-    const [saving, setSaving] = useState(false);
-    const [permGranted, setPermGranted] = useState(false);
+    const [unsupported, setUnsupported] = useState(!SpeechRecognitionAPI);
+    const recognitionRef = useRef(null);
 
-    const requestPerm = async () => {
-        const { granted } = await Audio.requestPermissionsAsync();
-        setPermGranted(granted);
-        return granted;
-    };
+    const parsed = parseVoicePhrase(transcript);
 
-    const startRecording = async () => {
-        const ok = permGranted || await requestPerm();
-        if (!ok) { Alert.alert('Permissão necessária', 'Habilite o microfone nas configurações.'); return; }
-        try {
-            await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
-            const { recording: rec } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
-            setRecording(rec);
+    useEffect(() => {
+        if (!SpeechRecognitionAPI) return;
+        const recognition = new SpeechRecognitionAPI();
+        recognition.lang = 'pt-BR';
+        recognition.continuous = true;
+        recognition.interimResults = true;
+
+        recognition.onresult = (event) => {
+            let combined = '';
+            for (let i = 0; i < event.results.length; i++) {
+                combined += event.results[i][0].transcript + ' ';
+            }
+            setTranscript(combined.trim());
+        };
+        recognition.onerror = () => setListening(false);
+        recognition.onend = () => setListening(false);
+
+        recognitionRef.current = recognition;
+        return () => recognition.stop();
+    }, []);
+
+    const toggleListening = () => {
+        if (!SpeechRecognitionAPI) { setUnsupported(true); return; }
+        if (listening) {
+            recognitionRef.current?.stop();
+            setListening(false);
+        } else {
+            setTranscript('');
+            recognitionRef.current?.start();
             setListening(true);
-        } catch (e) {
-            Alert.alert('Erro', 'Não foi possível iniciar a gravação.');
         }
     };
 
-    const stopRecording = async () => {
-        if (!recording) return;
-        setListening(false);
-        await recording.stopAndUnloadAsync();
-        setRecording(null);
-        // Note: expo-av doesn't do STT natively; user types or edits the transcript
-        // In a production build with EAS, integrate Google STT via REST API here
-    };
-
-    const handleParse = () => {
-        if (!transcript.trim()) { Alert.alert('Digite ou dite a frase antes de analisar.'); return; }
-        setParsed(parseVoicePhrase(transcript));
-    };
-
     const handleSave = () => {
-        if (!parsed) return;
+        if (!parsed.amount) { Alert.alert('Valor não identificado. Fale ou ajuste o valor antes de salvar.'); return; }
         if (!account) { Alert.alert('Selecione uma conta antes de salvar.'); return; }
         addDraft({
             type: 'transaction',
@@ -68,102 +69,100 @@ export default function VoiceScreen({ navigation }) {
 
     return (
         <ScrollView style={s.container} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
-            <View style={s.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()}><Text style={s.back}>‹ Voltar</Text></TouchableOpacity>
-                <Text style={s.title}>🎤 Comando de Voz</Text>
-                <Text style={s.hint}>Fale uma frase corrida. Ex: "Cinquenta reais no mercado no débito"</Text>
-            </View>
+            <Text style={s.hint}>Toque no microfone e fale a frase completa. Ex: "Cinquenta reais no mercado no débito"</Text>
 
             {/* Mic button */}
             <TouchableOpacity
                 style={[s.micBtn, listening && s.micBtnActive]}
-                onPressIn={startRecording}
-                onPressOut={stopRecording}
+                onPress={toggleListening}
                 activeOpacity={0.85}
             >
                 <Text style={s.micIcon}>{listening ? '⏺' : '🎤'}</Text>
-                <Text style={s.micLabel}>{listening ? 'Gravando... solte para parar' : 'Pressione e segure para falar'}</Text>
+                <Text style={s.micLabel}>{listening ? 'Ouvindo... toque para parar' : 'Toque para falar'}</Text>
             </TouchableOpacity>
 
-            {/* Manual transcript input */}
+            {unsupported && (
+                <Text style={s.unsupportedText}>
+                    Reconhecimento de voz não disponível neste navegador. Digite a frase manualmente abaixo.
+                </Text>
+            )}
+
+            {/* Live transcript */}
             <View style={s.section}>
-                <Text style={s.sectionLabel}>Frase (edite se necessário)</Text>
+                <Text style={s.sectionLabel}>Frase (ao vivo — edite se necessário)</Text>
                 <TextInput
                     style={s.transcriptInput}
                     value={transcript}
                     onChangeText={setTranscript}
-                    placeholder="Ex: cinquenta e dois reais no Bar do Mirim no débito"
+                    placeholder="Aguardando fala..."
                     placeholderTextColor="#475569"
                     multiline
-                    numberOfLines={3}
+                    numberOfLines={2}
                 />
-                <TouchableOpacity style={s.parseBtn} onPress={handleParse}>
-                    <Text style={s.parseBtnText}>🔍 Analisar Frase</Text>
-                </TouchableOpacity>
             </View>
 
-            {/* Parsed fields */}
-            {parsed && (
-                <View style={s.section}>
-                    <Text style={s.sectionLabel}>Campos extraídos (ajuste se necessário)</Text>
+            {/* Fields updating live from the transcript */}
+            <View style={s.section}>
+                <Text style={s.sectionLabel}>Campos identificados</Text>
 
-                    <Text style={s.fieldLabel}>Valor (R$)</Text>
-                    <TextInput style={s.field} value={String(parsed.amount)} keyboardType="numeric"
-                        onChangeText={v => setParsed(p => ({ ...p, amount: parseFloat(v) || 0 }))} />
+                <Text style={s.fieldLabel}>Valor (R$)</Text>
+                <Text style={[s.field, s.fieldReadonly, !parsed.amount && s.fieldWaiting]}>
+                    {parsed.amount ? parsed.amount.toFixed(2).replace('.', ',') : 'aguardando...'}
+                </Text>
 
-                    <Text style={s.fieldLabel}>Fornecedor</Text>
-                    <BeneficiaryPicker value={parsed.beneficiary}
-                        onChange={v => setParsed(p => ({ ...p, beneficiary: v }))} />
+                <Text style={s.fieldLabel}>Fornecedor</Text>
+                <Text style={[s.field, s.fieldReadonly, !parsed.beneficiary && s.fieldWaiting]}>
+                    {parsed.beneficiary || 'aguardando...'}
+                </Text>
 
-                    <Text style={s.fieldLabel}>Descrição</Text>
-                    <TextInput style={s.field} value={parsed.description}
-                        onChangeText={v => setParsed(p => ({ ...p, description: v }))} />
+                <Text style={s.fieldLabel}>Descrição</Text>
+                <Text style={[s.field, s.fieldReadonly, !parsed.description && s.fieldWaiting]}>
+                    {parsed.description || 'aguardando...'}
+                </Text>
 
-                    {parsed.paymentType ? (
-                        <View style={s.payTypeBadge}>
-                            <Text style={s.payTypeText}>Pagamento detectado: {parsed.paymentType}</Text>
-                        </View>
-                    ) : null}
+                {parsed.paymentType ? (
+                    <View style={s.payTypeBadge}>
+                        <Text style={s.payTypeText}>Pagamento detectado: {parsed.paymentType}</Text>
+                    </View>
+                ) : null}
 
-                    <Text style={s.fieldLabel}>Conta</Text>
-                    <AccountPicker selected={account} onSelect={setAccount} />
+                <Text style={s.fieldLabel}>Conta</Text>
+                <AccountPicker selected={account} onSelect={setAccount} />
 
-                    <Text style={s.fieldLabel}>Parcelas</Text>
-                    <TextInput style={s.field} value={installments} onChangeText={setInstallments}
-                        placeholder="1" placeholderTextColor="#475569" keyboardType="number-pad" />
-                    <Text style={s.installHint}>
-                        {parseInt(installments) > 1
-                            ? `${installments}x de R$ ${((parsed.amount || 0) / parseInt(installments)).toFixed(2).replace('.', ',')}`
-                            : 'Parcela única'}
-                    </Text>
+                <Text style={s.fieldLabel}>Parcelas</Text>
+                <TextInput style={s.input} value={installments} onChangeText={setInstallments}
+                    placeholder="1" placeholderTextColor="#475569" keyboardType="number-pad" />
+                <Text style={s.installHint}>
+                    {parseInt(installments) > 1
+                        ? `${installments}x de R$ ${((parsed.amount || 0) / parseInt(installments)).toFixed(2).replace('.', ',')}`
+                        : 'Parcela única'}
+                </Text>
 
-                    <TouchableOpacity style={s.saveBtn} onPress={handleSave}>
-                        <Text style={s.saveBtnText}>Incluir</Text>
-                    </TouchableOpacity>
-                </View>
-            )}
+                <TouchableOpacity style={s.saveBtn} onPress={handleSave}>
+                    <Text style={s.saveBtnText}>Incluir</Text>
+                </TouchableOpacity>
+            </View>
         </ScrollView>
     );
 }
 
 const s = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#0f172a' },
-    content: { paddingBottom: 40 },
-    header: { backgroundColor: '#004d40', padding: 20, paddingTop: 60 },
-    back: { color: '#CCFF00', fontSize: 16, marginBottom: 8 },
-    title: { color: '#fff', fontWeight: '900', fontSize: 22 },
-    hint: { color: 'rgba(255,255,255,0.55)', fontSize: 13, marginTop: 4, lineHeight: 18 },
-    micBtn: { margin: 20, backgroundColor: '#1e293b', borderRadius: 20, padding: 32, alignItems: 'center', borderWidth: 2, borderColor: '#004d40' },
+    content: { paddingBottom: 40, paddingTop: 16 },
+    hint: { color: 'rgba(255,255,255,0.55)', fontSize: 13, lineHeight: 18, marginHorizontal: 16, marginBottom: 12 },
+    micBtn: { margin: 16, marginTop: 0, backgroundColor: '#1e293b', borderRadius: 20, padding: 28, alignItems: 'center', borderWidth: 2, borderColor: '#004d40' },
     micBtnActive: { backgroundColor: '#7f1d1d', borderColor: '#ef4444' },
-    micIcon: { fontSize: 48, marginBottom: 10 },
+    micIcon: { fontSize: 44, marginBottom: 10 },
     micLabel: { color: '#fff', fontSize: 13, textAlign: 'center' },
+    unsupportedText: { color: '#f59e0b', fontSize: 12, marginHorizontal: 16, marginBottom: 12, lineHeight: 18 },
     section: { marginHorizontal: 16, marginBottom: 20, backgroundColor: '#1e293b', borderRadius: 16, padding: 20 },
     sectionLabel: { color: '#89962F', fontSize: 11, letterSpacing: 1, marginBottom: 12 },
-    transcriptInput: { backgroundColor: '#0f172a', color: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#334155', padding: 14, fontSize: 15, minHeight: 80, textAlignVertical: 'top' },
-    parseBtn: { backgroundColor: '#004d40', borderRadius: 10, padding: 14, alignItems: 'center', marginTop: 12 },
-    parseBtnText: { color: '#CCFF00', fontWeight: '700', fontSize: 15 },
+    transcriptInput: { backgroundColor: '#0f172a', color: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#334155', padding: 14, fontSize: 15, minHeight: 60, textAlignVertical: 'top' },
     fieldLabel: { color: '#89962F', fontSize: 11, marginTop: 14, marginBottom: 4 },
     field: { backgroundColor: '#0f172a', color: '#fff', borderRadius: 8, borderWidth: 1, borderColor: '#334155', padding: 12, fontSize: 16, fontWeight: '700' },
+    fieldReadonly: { paddingVertical: 12 },
+    fieldWaiting: { color: '#475569', fontWeight: '400', fontStyle: 'italic' },
+    input: { backgroundColor: '#0f172a', color: '#fff', borderRadius: 8, borderWidth: 1, borderColor: '#334155', padding: 12, fontSize: 16, fontWeight: '700' },
     installHint: { color: '#89962F', fontSize: 12, marginTop: 6 },
     payTypeBadge: { backgroundColor: '#004d40', borderRadius: 8, padding: 8, marginTop: 10, alignSelf: 'flex-start' },
     payTypeText: { color: '#CCFF00', fontSize: 12 },

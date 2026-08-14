@@ -31,11 +31,6 @@ export default function ManualScreen({ navigation }) {
 
     return (
         <ScrollView style={s.container} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
-            <View style={s.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()}><Text style={s.back}>‹ Voltar</Text></TouchableOpacity>
-                <Text style={s.title}>📝 Digitação Rápida</Text>
-            </View>
-
             <View style={s.form}>
                 {/* Amount — numeric keyboard, big font */}
                 <Text style={s.label}>Valor (R$) *</Text>
@@ -78,11 +73,8 @@ export default function ManualScreen({ navigation }) {
 
 const s = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#0f172a' },
-    content: { paddingBottom: 40 },
-    header: { backgroundColor: '#004d40', padding: 20, paddingTop: 60 },
-    back: { color: '#CCFF00', fontSize: 16, marginBottom: 8 },
-    title: { color: '#fff', fontWeight: '900', fontSize: 22 },
-    form: { margin: 16, backgroundColor: '#1e293b', borderRadius: 16, padding: 20 },
+    content: { paddingBottom: 40, paddingTop: 16 },
+    form: { margin: 16, marginTop: 0, backgroundColor: '#1e293b', borderRadius: 16, padding: 20 },
     label: { color: '#89962F', fontSize: 11, letterSpacing: 1, marginTop: 16, marginBottom: 6 },
     input: { backgroundColor: '#0f172a', color: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#334155', padding: 14, fontSize: 16 },
     inputAmount: { fontSize: 36, fontWeight: '900', color: '#CCFF00', textAlign: 'center', padding: 20, letterSpacing: 2 },
