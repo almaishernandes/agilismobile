@@ -4,6 +4,7 @@ import { Audio } from 'expo-av';
 import { parseVoicePhrase } from '../lib/voiceParser';
 import { useDrafts } from '../context/DraftContext';
 import AccountPicker from '../components/AccountPicker';
+import BeneficiaryPicker from '../components/BeneficiaryPicker';
 
 export default function VoiceScreen({ navigation }) {
     const { addDraft } = useDrafts();
@@ -13,6 +14,7 @@ export default function VoiceScreen({ navigation }) {
     const [transcript, setTranscript] = useState('');
     const [parsed, setParsed] = useState(null);
     const [account, setAccount] = useState(null);
+    const [installments, setInstallments] = useState('1');
     const [saving, setSaving] = useState(false);
     const [permGranted, setPermGranted] = useState(false);
 
@@ -59,6 +61,7 @@ export default function VoiceScreen({ navigation }) {
             amount: parsed.amount,
             beneficiary: parsed.beneficiary,
             description: parsed.description,
+            installments: parseInt(installments) || 1,
         });
         navigation.goBack();
     };
@@ -109,8 +112,8 @@ export default function VoiceScreen({ navigation }) {
                         onChangeText={v => setParsed(p => ({ ...p, amount: parseFloat(v) || 0 }))} />
 
                     <Text style={s.fieldLabel}>Fornecedor</Text>
-                    <TextInput style={s.field} value={parsed.beneficiary}
-                        onChangeText={v => setParsed(p => ({ ...p, beneficiary: v }))} />
+                    <BeneficiaryPicker value={parsed.beneficiary}
+                        onChange={v => setParsed(p => ({ ...p, beneficiary: v }))} />
 
                     <Text style={s.fieldLabel}>Descrição</Text>
                     <TextInput style={s.field} value={parsed.description}
@@ -125,8 +128,17 @@ export default function VoiceScreen({ navigation }) {
                     <Text style={s.fieldLabel}>Conta</Text>
                     <AccountPicker selected={account} onSelect={setAccount} />
 
+                    <Text style={s.fieldLabel}>Parcelas</Text>
+                    <TextInput style={s.field} value={installments} onChangeText={setInstallments}
+                        placeholder="1" placeholderTextColor="#475569" keyboardType="number-pad" />
+                    <Text style={s.installHint}>
+                        {parseInt(installments) > 1
+                            ? `${installments}x de R$ ${((parsed.amount || 0) / parseInt(installments)).toFixed(2).replace('.', ',')}`
+                            : 'Parcela única'}
+                    </Text>
+
                     <TouchableOpacity style={s.saveBtn} onPress={handleSave}>
-                        <Text style={s.saveBtnText}>✓ Salvar no Rascunho</Text>
+                        <Text style={s.saveBtnText}>Incluir</Text>
                     </TouchableOpacity>
                 </View>
             )}
@@ -152,6 +164,7 @@ const s = StyleSheet.create({
     parseBtnText: { color: '#CCFF00', fontWeight: '700', fontSize: 15 },
     fieldLabel: { color: '#89962F', fontSize: 11, marginTop: 14, marginBottom: 4 },
     field: { backgroundColor: '#0f172a', color: '#fff', borderRadius: 8, borderWidth: 1, borderColor: '#334155', padding: 12, fontSize: 16, fontWeight: '700' },
+    installHint: { color: '#89962F', fontSize: 12, marginTop: 6 },
     payTypeBadge: { backgroundColor: '#004d40', borderRadius: 8, padding: 8, marginTop: 10, alignSelf: 'flex-start' },
     payTypeText: { color: '#CCFF00', fontSize: 12 },
     saveBtn: { backgroundColor: '#CCFF00', borderRadius: 12, padding: 18, alignItems: 'center', marginTop: 20 },
