@@ -69,15 +69,13 @@ export default function VoiceScreen({ navigation }) {
 
     return (
         <ScrollView style={s.container} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
-            <Text style={s.hint}>Toque no microfone e fale a frase completa. Ex: "Cinquenta reais no mercado no débito"</Text>
-
-            {/* Mic button */}
+            {/* Start/stop toggle */}
             <TouchableOpacity
                 style={[s.micBtn, listening && s.micBtnActive]}
                 onPress={toggleListening}
                 activeOpacity={0.85}
             >
-                <Text style={s.micIcon}>🎤</Text>
+                <Text style={s.micBtnText}>{listening ? 'Parar' : 'Iniciar'}</Text>
             </TouchableOpacity>
 
             {unsupported && (
@@ -143,10 +141,9 @@ export default function VoiceScreen({ navigation }) {
 const s = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#0f172a' },
     content: { paddingBottom: 40, paddingTop: 16 },
-    hint: { color: 'rgba(255,255,255,0.55)', fontSize: 13, lineHeight: 18, marginHorizontal: 16, marginBottom: 12 },
-    micBtn: { alignSelf: 'center', marginBottom: 16, backgroundColor: '#1e293b', borderRadius: 50, width: 88, height: 88, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#004d40' },
+    micBtn: { marginHorizontal: 16, marginTop: 16, marginBottom: 16, backgroundColor: '#004d40', borderRadius: 12, paddingVertical: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#004d40' },
     micBtnActive: { backgroundColor: '#7f1d1d', borderColor: '#ef4444' },
-    micIcon: { fontSize: 32 },
+    micBtnText: { color: '#CCFF00', fontWeight: '900', fontSize: 16, letterSpacing: 1 },
     unsupportedText: { color: '#f59e0b', fontSize: 12, marginHorizontal: 16, marginBottom: 12, lineHeight: 18 },
     section: { marginHorizontal: 16, marginBottom: 20, backgroundColor: '#1e293b', borderRadius: 16, padding: 20 },
     sectionLabel: { color: '#89962F', fontSize: 11, letterSpacing: 1, marginBottom: 12 },
