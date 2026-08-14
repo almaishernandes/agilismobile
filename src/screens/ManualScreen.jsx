@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useDrafts } from '../context/DraftContext';
 import AccountPicker from '../components/AccountPicker';
+import BeneficiaryPicker from '../components/BeneficiaryPicker';
 
 export default function ManualScreen({ navigation }) {
     const { addDraft } = useDrafts();
@@ -49,8 +50,7 @@ export default function ManualScreen({ navigation }) {
                 />
 
                 <Text style={s.label}>Fornecedor</Text>
-                <TextInput style={s.input} value={beneficiary} onChangeText={setBeneficiary}
-                    placeholder="Ex: Supermercado Extra" placeholderTextColor="#475569" />
+                <BeneficiaryPicker value={beneficiary} onChange={setBeneficiary} />
 
                 <Text style={s.label}>Descrição</Text>
                 <TextInput style={s.input} value={description} onChangeText={setDescription}
@@ -70,7 +70,7 @@ export default function ManualScreen({ navigation }) {
             </View>
 
             <TouchableOpacity style={s.saveBtn} onPress={handleSave} activeOpacity={0.85}>
-                <Text style={s.saveBtnText}>✓ Adicionar ao Rascunho</Text>
+                <Text style={s.saveBtnText}>Incluir</Text>
             </TouchableOpacity>
         </ScrollView>
     );

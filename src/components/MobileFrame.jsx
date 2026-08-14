@@ -37,6 +37,7 @@ const s = StyleSheet.create({
         padding: 20,
     },
     phone: {
+        position: 'relative',
         width: PHONE_WIDTH,
         height: '100%',
         maxWidth: '100%',

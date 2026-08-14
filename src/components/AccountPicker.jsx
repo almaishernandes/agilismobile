@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { getSecurityContext } from '../lib/auth';
+import BottomSheet from './BottomSheet';
 
 export default function AccountPicker({ selected, onSelect }) {
     const [accounts, setAccounts] = useState([]);
@@ -34,30 +35,26 @@ export default function AccountPicker({ selected, onSelect }) {
                 <Text style={s.arrow}>›</Text>
             </TouchableOpacity>
 
-            <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
-                <View style={s.overlay}>
-                    <View style={s.sheet}>
-                        <View style={s.sheetHeader}>
-                            <Text style={s.sheetTitle}>Selecione a Conta</Text>
-                            <TouchableOpacity onPress={() => setOpen(false)}>
-                                <Text style={s.sheetClose}>✕</Text>
-                            </TouchableOpacity>
-                        </View>
-                        {loading ? <ActivityIndicator color="#CCFF00" style={{ margin: 24 }} /> : (
-                            <FlatList
-                                data={accounts}
-                                keyExtractor={i => i.id}
-                                renderItem={({ item }) => (
-                                    <TouchableOpacity style={s.accountRow} onPress={() => { onSelect(item); setOpen(false); }}>
-                                        <Text style={s.accountName}>{item.name}</Text>
-                                        <Text style={s.accountType}>{item.account_type}</Text>
-                                    </TouchableOpacity>
-                                )}
-                            />
-                        )}
-                    </View>
+            <BottomSheet visible={open} onClose={() => setOpen(false)}>
+                <View style={s.sheetHeader}>
+                    <Text style={s.sheetTitle}>Selecione a Conta</Text>
+                    <TouchableOpacity onPress={() => setOpen(false)}>
+                        <Text style={s.sheetClose}>✕</Text>
+                    </TouchableOpacity>
                 </View>
-            </Modal>
+                {loading ? <ActivityIndicator color="#CCFF00" style={{ margin: 24 }} /> : (
+                    <FlatList
+                        data={accounts}
+                        keyExtractor={i => i.id}
+                        renderItem={({ item }) => (
+                            <TouchableOpacity style={s.accountRow} onPress={() => { onSelect(item); setOpen(false); }}>
+                                <Text style={s.accountName}>{item.name}</Text>
+                                <Text style={s.accountType}>{item.account_type}</Text>
+                            </TouchableOpacity>
+                        )}
+                    />
+                )}
+            </BottomSheet>
         </>
     );
 }
@@ -66,8 +63,6 @@ const s = StyleSheet.create({
     selector: { backgroundColor: '#0f172a', borderRadius: 10, borderWidth: 1, borderColor: '#334155', padding: 14, flexDirection: 'row', alignItems: 'center', marginTop: 4 },
     selectorText: { flex: 1, color: '#fff', fontSize: 15 },
     arrow: { color: '#CCFF00', fontSize: 20 },
-    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-    sheet: { backgroundColor: '#1e293b', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '70%' },
     sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#334155' },
     sheetTitle: { color: '#CCFF00', fontWeight: '800', fontSize: 16 },
     sheetClose: { color: '#94a3b8', fontSize: 20 },
