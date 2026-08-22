@@ -3,7 +3,6 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'rea
 import { useDrafts } from '../context/DraftContext';
 import { signOut } from '../lib/auth';
 import QRScreen from './QRScreen';
-import VoiceScreen from './VoiceScreen';
 import ManualScreen from './ManualScreen';
 
 function fmtBRL(n) {
@@ -12,7 +11,6 @@ function fmtBRL(n) {
 
 const TABS = {
     qr: { label: 'QR Code\n/ Foto', icon: '📷', style: 'qBtnQR', Component: QRScreen },
-    voice: { label: 'Voz', icon: '🎤', style: 'qBtnVoice', Component: VoiceScreen },
     manual: { label: 'Digitação', icon: '📝', style: 'qBtnManual', Component: ManualScreen },
 };
 

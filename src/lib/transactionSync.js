@@ -9,7 +9,10 @@ function addMonths(iso, n) {
 // Grava um lançamento (com parcelas, se houver) direto na tabela transactions,
 // dentro da movimentação (conta) selecionada — mesmo formato usado no
 // fechamento do dia (ReviewScreen), só que na hora, sem esperar o export.
-export async function insertTransaction(ctx, { account_id, amount, beneficiary, description, installments = 1 }) {
+export async function insertTransaction(ctx, {
+    account_id, amount, beneficiary, description, installments = 1,
+    cost_center_id = null, transaction_type_id = null,
+}) {
     const today = new Date().toISOString().split('T')[0];
     const n = installments || 1;
     const rows = [];
@@ -23,6 +26,8 @@ export async function insertTransaction(ctx, { account_id, amount, beneficiary, 
             dc_type: 'D',
             type: 'Expense',
             beneficiary_id: null,
+            cost_center_id,
+            transaction_type_id,
             user_id: ctx?.user_id ?? null,
             family_id: ctx?.family_id ?? null,
         });

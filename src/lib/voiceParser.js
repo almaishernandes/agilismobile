@@ -20,7 +20,7 @@ const PAYMENT_KEYWORDS = {
     pix: 'pix',
 };
 
-function wordsToNumber(words) {
+export function wordsToNumber(words) {
     let total = 0, current = 0;
     for (const w of words) {
         const n = WORD_NUMS[w.toLowerCase()];
@@ -30,6 +30,19 @@ function wordsToNumber(words) {
         else { current += n; }
     }
     return total + current;
+}
+
+// Extrai um único número (valor em reais ou contagem) de uma frase curta
+// falada para um campo específico. Ex: "cinquenta reais", "3", "três".
+export function parseSpokenNumber(phrase) {
+    if (!phrase) return null;
+    const numericMatch = phrase.match(/R?\$?\s*(\d+[.,]?\d*)/i);
+    if (numericMatch) return parseFloat(numericMatch[1].replace(',', '.'));
+
+    const lower = phrase.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const words = lower.split(/\s+/).filter(w => WORD_NUMS[w.replace(/[^a-z]/g, '')] !== undefined);
+    if (words.length === 0) return null;
+    return wordsToNumber(words);
 }
 
 export function parseVoicePhrase(phrase) {
