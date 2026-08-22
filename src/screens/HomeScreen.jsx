@@ -10,7 +10,8 @@ function fmtBRL(n) {
 }
 
 const TABS = {
-    qr: { label: 'QR Code\n/ Foto', icon: '📷', style: 'qBtnQR', Component: QRScreen },
+    qr: { label: 'QR Code', icon: '📷', style: 'qBtnQR', Component: QRScreen, props: { forcedMode: 'qr' } },
+    photo: { label: 'Foto', icon: '🧾', style: 'qBtnVoice', Component: QRScreen, props: { forcedMode: 'photo' } },
     manual: { label: 'Digitação', icon: '📝', style: 'qBtnManual', Component: ManualScreen },
 };
 
@@ -28,6 +29,7 @@ export default function HomeScreen({ navigation }) {
     const toggleTab = (key) => setActiveTab(prev => (prev === key ? null : key));
 
     const ActiveComponent = activeTab ? TABS[activeTab].Component : null;
+    const activeProps = activeTab ? (TABS[activeTab].props || {}) : {};
 
     return (
         <View style={s.container}>
@@ -58,7 +60,7 @@ export default function HomeScreen({ navigation }) {
             </View>
 
             {ActiveComponent ? (
-                <ActiveComponent navigation={{ goBack: () => setActiveTab(null) }} />
+                <ActiveComponent navigation={{ goBack: () => setActiveTab(null) }} {...activeProps} />
             ) : (
                 <>
                     {/* Draft summary card */}

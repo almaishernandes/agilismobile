@@ -20,10 +20,10 @@ function extractEmitente(url) {
     } catch { return ''; }
 }
 
-export default function QRScreen({ navigation }) {
+export default function QRScreen({ navigation, forcedMode }) {
     const { addDraft } = useDrafts();
     const [permission, requestPermission] = useCameraPermissions();
-    const [mode, setMode] = useState('qr'); // 'qr' | 'photo'
+    const [mode, setMode] = useState(forcedMode || 'qr'); // 'qr' | 'photo'
     const [scanned, setScanned] = useState(false);
     const [scannedData, setScannedData] = useState(null);
     const [processing, setProcessing] = useState(false);
@@ -121,24 +121,28 @@ export default function QRScreen({ navigation }) {
 
     return (
         <ScrollView style={s.container} contentContainerStyle={{ flexGrow: 1 }}>
-            {/* Mode toggle */}
-            <View style={s.header}>
-                <View style={s.tabs}>
-                    <TouchableOpacity style={[s.tab, mode === 'qr' && s.tabActive]} onPress={() => { setMode('qr'); setScanned(false); }}>
-                        <Text style={[s.tabText, mode === 'qr' && s.tabTextActive]}>QR Code</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={[s.tab, mode === 'photo' && s.tabActive]} onPress={() => setMode('photo')}>
-                        <Text style={[s.tabText, mode === 'photo' && s.tabTextActive]}>Foto Fallback</Text>
-                    </TouchableOpacity>
+            {/* Mode toggle — só aparece se não vier de uma aba dedicada */}
+            {!forcedMode && (
+                <View style={s.header}>
+                    <View style={s.tabs}>
+                        <TouchableOpacity style={[s.tab, mode === 'qr' && s.tabActive]} onPress={() => { setMode('qr'); setScanned(false); }}>
+                            <Text style={[s.tabText, mode === 'qr' && s.tabTextActive]}>QR Code</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={[s.tab, mode === 'photo' && s.tabActive]} onPress={() => setMode('photo')}>
+                            <Text style={[s.tabText, mode === 'photo' && s.tabTextActive]}>Foto Fallback</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
-            </View>
+            )}
 
             {mode === 'qr' && !scanned && (
                 <View style={s.cameraWrap}>
                     <CameraScanner active={!scanned} onScanned={handleBarcode} hint="Aponte para o QR Code do cupom fiscal" />
-                    <TouchableOpacity style={s.photoFallbackBtn} onPress={() => setMode('photo')}>
-                        <Text style={s.photoFallbackText}>QR rasurado? Tire uma foto</Text>
-                    </TouchableOpacity>
+                    {!forcedMode && (
+                        <TouchableOpacity style={s.photoFallbackBtn} onPress={() => setMode('photo')}>
+                            <Text style={s.photoFallbackText}>QR rasurado? Tire uma foto</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
             )}
 
