@@ -7,6 +7,7 @@ import AccountPicker from '../components/AccountPicker';
 import CameraScanner from '../components/CameraScanner';
 import { supabase } from '../lib/supabase';
 import { getSecurityContext } from '../lib/auth';
+import { uploadComprovante } from '../lib/storageUpload';
 
 function extractChave(data) {
     const m = data.match(/\b(\d{44})\b/);
@@ -30,6 +31,7 @@ export default function QRScreen({ navigation, forcedMode }) {
     const [nfceData, setNfceData] = useState(null);
     const [photo, setPhoto] = useState(null);
     const [account, setAccount] = useState(null);
+    const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
     const handleBarcode = async ({ data }) => {
         if (scanned) return;
@@ -94,15 +96,39 @@ export default function QRScreen({ navigation, forcedMode }) {
         navigation.goBack();
     };
 
-    const handleSavePhoto = () => {
+    const handleSavePhoto = async () => {
         if (!photo) { Alert.alert('Tire uma foto antes de salvar.'); return; }
         if (!account) { Alert.alert('Selecione uma conta antes de salvar.'); return; }
+
+        setUploadingPhoto(true);
+        const ctx = await getSecurityContext();
+        const { path: filePath, error: uploadError } = await uploadComprovante(photo, ctx?.family_id);
+
+        let dbError = uploadError;
+        if (!uploadError) {
+            const { error } = await supabase.from('nfce_imports').insert([{
+                emitente_nome: 'Comprovante fotografado',
+                metodo: 'foto_comprovante',
+                file_path: filePath,
+                raw_data: { fonte: 'app_mobile_foto' },
+                user_id: ctx?.user_id ?? null,
+                family_id: ctx?.family_id ?? null,
+            }]);
+            dbError = error;
+        }
+        setUploadingPhoto(false);
+
+        if (dbError) {
+            Alert.alert('Aviso', 'Não foi possível enviar a foto ao banco agora. O item foi salvo no rascunho e será reenviado ao fechar o dia.');
+        }
+
         addDraft({
             type: 'nfce_import',
             account_id: account.id,
             account_name: account.name,
             description: 'Comprovante fotografado',
             photo_uri: photo,
+            synced: !dbError,
         });
         navigation.goBack();
     };
@@ -200,8 +226,8 @@ export default function QRScreen({ navigation, forcedMode }) {
                         <>
                             <Text style={s.resultLabel}>Conta</Text>
                             <AccountPicker selected={account} onSelect={setAccount} />
-                            <TouchableOpacity style={[s.btnPrimary, { marginTop: 16 }]} onPress={handleSavePhoto}>
-                                <Text style={s.btnPrimaryText}>✓ Salvar Rascunho com Foto</Text>
+                            <TouchableOpacity style={[s.btnPrimary, { marginTop: 16 }]} onPress={handleSavePhoto} disabled={uploadingPhoto}>
+                                <Text style={s.btnPrimaryText}>{uploadingPhoto ? 'Enviando...' : '✓ Enviar Comprovante'}</Text>
                             </TouchableOpacity>
                         </>
                     )}
