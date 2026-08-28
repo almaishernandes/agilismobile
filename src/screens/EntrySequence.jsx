@@ -270,14 +270,19 @@ export default function EntrySequence({ navigation, voiceEnabled }) {
     return (
         <ScrollView style={s.container} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
             <View style={s.form}>
-                {/* Completed fields shown compact above the active one */}
-                {values.amount != null && stepIndex > 0 && <DoneRow label="Valor" value={fmtBRL(values.amount)} />}
-                {stepIndex > 1 && <DoneRow label="Tipo" value={values.dc_type === 'C' ? 'Entrada' : 'Saída'} />}
-                {stepIndex > 2 && <DoneRow label="Parcelas" value={`${values.installments}x`} />}
-                {values.account && stepIndex > 3 && <DoneRow label="Conta" value={values.account.name} />}
-                {stepIndex > 4 && <DoneRow label="Fornecedor" value={values.beneficiary?.name || '—'} />}
-                {stepIndex > 5 && <DoneRow label="Centro de Custos" value={values.costCenter?.description || '—'} />}
-                {stepIndex > 6 && <DoneRow label="Plano de Contas" value={values.chartAccount?.description || '—'} />}
+                {/* Completed fields shown compact above the active one — escondido
+                    na Conferência, que já repete tudo de forma organizada. */}
+                {step !== 'review' && (
+                    <>
+                        {values.amount != null && stepIndex > 0 && <DoneRow label="Valor" value={fmtBRL(values.amount)} />}
+                        {stepIndex > 1 && <DoneRow label="Tipo" value={values.dc_type === 'C' ? 'Entrada' : 'Saída'} />}
+                        {stepIndex > 2 && <DoneRow label="Parcelas" value={`${values.installments}x`} />}
+                        {values.account && stepIndex > 3 && <DoneRow label="Conta" value={values.account.name} />}
+                        {stepIndex > 4 && <DoneRow label="Fornecedor" value={values.beneficiary?.name || '—'} />}
+                        {stepIndex > 5 && <DoneRow label="Centro de Custos" value={values.costCenter?.description || '—'} />}
+                        {stepIndex > 6 && <DoneRow label="Plano de Contas" value={values.chartAccount?.description || '—'} />}
+                    </>
+                )}
 
                 <NumberField
                     label={STEP_LABELS.amount}
