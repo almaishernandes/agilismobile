@@ -114,6 +114,44 @@ function NumberField({ label, active, onDone, voiceEnabled }) {
     );
 }
 
+// Parcelas quase sempre é 1 — já vem preenchido, só espera Enter. Se
+// precisar de outro número, edita e aperta Enter (sem voz, sem botão à
+// parte).
+function InstallmentsField({ active, onDone }) {
+    const [text, setText] = useState('1');
+    const inputRef = useRef(null);
+
+    useEffect(() => {
+        if (active) {
+            setText('1');
+            setTimeout(() => inputRef.current?.focus?.(), 50);
+        }
+    }, [active]);
+
+    if (!active) return null;
+
+    const confirm = () => {
+        const n = Math.max(1, Math.round(parseFloat(text.replace(',', '.')) || 1));
+        onDone(n);
+    };
+
+    return (
+        <View style={s.stepBox}>
+            <Text style={s.stepLabel}>{STEP_LABELS.installments}</Text>
+            <TextInput
+                ref={inputRef}
+                style={s.input}
+                value={text}
+                onChangeText={setText}
+                keyboardType="number-pad"
+                selectTextOnFocus
+                onSubmitEditing={confirm}
+                returnKeyType="done"
+            />
+        </View>
+    );
+}
+
 function DoneRow({ label, value }) {
     return (
         <View style={s.doneRow}>
@@ -311,11 +349,9 @@ export default function EntrySequence({ navigation, voiceEnabled }) {
                     </View>
                 )}
 
-                <NumberField
-                    label={STEP_LABELS.installments}
+                <InstallmentsField
                     active={step === 'installments'}
-                    onDone={(n) => setValue('installments', Math.max(1, Math.round(n)))}
-                    voiceEnabled={voiceEnabled}
+                    onDone={(n) => setValue('installments', n)}
                 />
 
                 {step === 'account' && (
