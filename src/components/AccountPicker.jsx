@@ -6,7 +6,8 @@ import BottomSheet from './BottomSheet';
 export default function AccountPicker({ selected, onSelect }) {
     const [accounts, setAccounts] = useState([]);
     const [open, setOpen] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(null);
 
     // Mesma consulta usada no Agilis-Web (AccountManager): busca todas as
     // contas, sem filtrar por family_id — o escopo é feito por RLS no
@@ -14,17 +15,25 @@ export default function AccountPicker({ selected, onSelect }) {
     // family_id do perfil não batia exatamente com o das contas.
     const load = async () => {
         setLoading(true);
+        setLoadError(null);
         const { data, error } = await supabase
             .from('accounts')
             .select('id, name, account_type')
             .order('name');
-        if (error) console.error('Erro ao carregar contas:', error);
+        if (error) {
+            console.error('Erro ao carregar contas:', error);
+            setLoadError(error.message);
+        }
         setAccounts(data || []);
         setLoading(false);
     };
 
+    // Carrega assim que o componente aparece na tela (não só ao abrir o
+    // menu), pra já estar pronto quando o usuário tocar.
+    useEffect(() => { load(); }, []);
+
     const handleOpen = () => {
-        if (accounts.length === 0) load();
+        if (accounts.length === 0 && !loading) load();
         setOpen(true);
     };
 
@@ -53,6 +62,14 @@ export default function AccountPicker({ selected, onSelect }) {
                                 <Text style={s.accountType}>{item.account_type}</Text>
                             </TouchableOpacity>
                         )}
+                        ListEmptyComponent={
+                            <TouchableOpacity style={s.emptyBox} onPress={load}>
+                                <Text style={s.emptyText}>
+                                    {loadError ? `Erro ao carregar: ${loadError}` : 'Nenhuma conta encontrada.'}
+                                </Text>
+                                <Text style={s.emptyRetry}>Toque para tentar novamente</Text>
+                            </TouchableOpacity>
+                        }
                     />
                 )}
             </BottomSheet>
@@ -68,6 +85,9 @@ const s = StyleSheet.create({
     sheetTitle: { color: '#CCFF00', fontWeight: '800', fontSize: 16 },
     sheetClose: { color: '#94a3b8', fontSize: 20 },
     list: { maxHeight: 360 },
+    emptyBox: { padding: 30, alignItems: 'center' },
+    emptyText: { color: '#94a3b8', fontSize: 13, textAlign: 'center' },
+    emptyRetry: { color: '#CCFF00', fontSize: 12, marginTop: 8, textDecorationLine: 'underline' },
     accountRow: { padding: 18, borderBottomWidth: 1, borderBottomColor: '#0f172a' },
     accountName: { color: '#fff', fontSize: 16, fontWeight: '700' },
     accountType: { color: '#89962F', fontSize: 12, marginTop: 2 },
