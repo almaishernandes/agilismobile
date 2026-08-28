@@ -6,7 +6,7 @@ import AccountPicker from '../components/AccountPicker';
 import BeneficiaryPicker from '../components/BeneficiaryPicker';
 import TablePicker from '../components/TablePicker';
 import { getSecurityContext } from '../lib/auth';
-import { insertTransaction } from '../lib/transactionSync';
+import { insertTransaction, addMonths, todayISO } from '../lib/transactionSync';
 import { parseSpokenNumber } from '../lib/voiceParser';
 import { uploadComprovante } from '../lib/storageUpload';
 import { supabase } from '../lib/supabase';
@@ -31,11 +31,18 @@ const EMPTY_VALUES = {
     dc_type: 'D',
     type: 'Expense',
     installments: 1,
+    firstDueDate: todayISO(),
     account: null,
     beneficiary: null,
     costCenter: null,
     chartAccount: null,
 };
+
+function fmtDateBR(iso) {
+    if (!iso) return '—';
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+}
 
 // Campo numérico (Valor / Parcelas). Em modo voz, começa ouvindo
 // automaticamente ao entrar no passo, com botão "Digitar" como
@@ -170,6 +177,7 @@ export default function EntrySequence({ navigation, voiceEnabled }) {
     const [stage, setStage] = useState('form');
     const [photo, setPhoto] = useState(null);
     const [uploadingPhoto, setUploadingPhoto] = useState(false);
+    const [showInstallmentDetail, setShowInstallmentDetail] = useState(false);
     const savedDraftRef = useRef(null);
 
     const step = STEPS[stepIndex];
@@ -182,11 +190,29 @@ export default function EntrySequence({ navigation, voiceEnabled }) {
         advance();
     };
 
+    // Só some pra tela de conta quando: 1 parcela só (nada a detalhar), ou
+    // mais de 1 parcela e o usuário já confirmou vencimento/parcelamento.
+    const handleInstallmentsDone = (n) => {
+        setValues(prev => ({ ...prev, installments: n }));
+        if (n > 1) {
+            setValues(prev => ({ ...prev, firstDueDate: todayISO() }));
+            setShowInstallmentDetail(true);
+        } else {
+            advance();
+        }
+    };
+
+    const confirmInstallmentDetail = () => {
+        setShowInstallmentDetail(false);
+        advance();
+    };
+
     const resetFlow = () => {
         setValues(EMPTY_VALUES);
         setStepIndex(0);
         setStage('form');
         setPhoto(null);
+        setShowInstallmentDetail(false);
         savedDraftRef.current = null;
     };
 
@@ -206,6 +232,7 @@ export default function EntrySequence({ navigation, voiceEnabled }) {
             transaction_type_id: values.chartAccount?.id ?? null,
             dc_type: values.dc_type,
             type: values.type,
+            first_due_date: values.installments > 1 ? values.firstDueDate : null,
         });
         setSaving(false);
 
@@ -350,9 +377,44 @@ export default function EntrySequence({ navigation, voiceEnabled }) {
                 )}
 
                 <InstallmentsField
-                    active={step === 'installments'}
-                    onDone={(n) => setValue('installments', n)}
+                    active={step === 'installments' && !showInstallmentDetail}
+                    onDone={handleInstallmentsDone}
                 />
+
+                {step === 'installments' && showInstallmentDetail && (
+                    <View style={s.stepBox}>
+                        <Text style={s.stepLabel}>Vencimento da 1ª parcela</Text>
+                        <TextInput
+                            style={s.input}
+                            value={fmtDateBR(values.firstDueDate)}
+                            onChangeText={(txt) => {
+                                const digits = txt.replace(/\D/g, '').slice(0, 8);
+                                const dd = digits.slice(0, 2), mm = digits.slice(2, 4), yyyy = digits.slice(4, 8);
+                                if (dd.length === 2 && mm.length === 2 && yyyy.length === 4) {
+                                    setValues(v => ({ ...v, firstDueDate: `${yyyy}-${mm}-${dd}` }));
+                                }
+                            }}
+                            placeholder="DD/MM/AAAA"
+                            placeholderTextColor="#475569"
+                            keyboardType="number-pad"
+                        />
+
+                        <Text style={[s.stepLabel, { marginTop: 16 }]}>Parcelamento</Text>
+                        <View style={s.installmentPreview}>
+                            {Array.from({ length: values.installments }, (_, i) => (
+                                <View key={i} style={s.installmentRow}>
+                                    <Text style={s.installmentRowLabel}>{i + 1}/{values.installments}</Text>
+                                    <Text style={s.installmentRowDate}>{fmtDateBR(addMonths(values.firstDueDate, i))}</Text>
+                                    <Text style={s.installmentRowAmount}>{fmtBRL(values.amount / values.installments)}</Text>
+                                </View>
+                            ))}
+                        </View>
+
+                        <TouchableOpacity style={s.saveBtn} onPress={confirmInstallmentDetail}>
+                            <Text style={s.saveBtnText}>Continuar</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
 
                 {step === 'account' && (
                     <View style={s.stepBox}>
@@ -403,9 +465,13 @@ export default function EntrySequence({ navigation, voiceEnabled }) {
                 {step === 'review' && (
                     <View style={s.stepBox}>
                         <Text style={s.stepLabel}>Conferência</Text>
+                        <DoneRow label="Data" value={fmtDateBR(todayISO())} />
                         <DoneRow label="Valor" value={fmtBRL(values.amount)} />
                         <DoneRow label="Tipo" value={values.dc_type === 'C' ? 'Entrada' : 'Saída'} />
                         <DoneRow label="Parcelas" value={`${values.installments}x`} />
+                        {values.installments > 1 && (
+                            <DoneRow label="1º Vencimento" value={fmtDateBR(values.firstDueDate)} />
+                        )}
                         <DoneRow label="Conta" value={values.account?.name || '—'} />
                         <DoneRow label="Fornecedor" value={values.beneficiary?.name || '—'} />
                         <DoneRow label="Centro de Custos" value={values.costCenter?.description || '—'} />
@@ -458,6 +524,12 @@ const s = StyleSheet.create({
     btnSecondary: { flex: 1, backgroundColor: '#0f172a', borderRadius: 12, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#334155', justifyContent: 'center' },
     btnSecondaryText: { color: '#fff', fontSize: 14, fontWeight: '700' },
     saveBtn: { flex: 2, backgroundColor: '#CCFF00', borderRadius: 12, padding: 16, alignItems: 'center', justifyContent: 'center' },
+
+    installmentPreview: { backgroundColor: '#0f172a', borderRadius: 10, borderWidth: 1, borderColor: '#334155', overflow: 'hidden' },
+    installmentRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
+    installmentRowLabel: { color: '#89962F', fontSize: 12, fontWeight: '700', width: 40 },
+    installmentRowDate: { color: '#fff', fontSize: 13, flex: 1 },
+    installmentRowAmount: { color: '#CCFF00', fontSize: 13, fontWeight: '700' },
     saveBtnText: { color: '#0f172a', fontWeight: '900', fontSize: 16 },
 
     photoPlaceholder: { height: 180, backgroundColor: '#0f172a', borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginTop: 16, marginBottom: 12 },

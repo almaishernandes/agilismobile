@@ -1,9 +1,13 @@
 import { supabase } from './supabase';
 
-function addMonths(iso, n) {
+export function addMonths(iso, n) {
     const d = new Date(iso);
     d.setMonth(d.getMonth() + n);
     return d.toISOString().split('T')[0];
+}
+
+export function todayISO() {
+    return new Date().toISOString().split('T')[0];
 }
 
 // Resolve o id do fornecedor em `beneficiaries` a partir do que veio do
@@ -43,17 +47,19 @@ export async function insertTransaction(ctx, {
     cost_center_id = null, transaction_type_id = null,
     beneficiary_id = null, beneficiary_name = '',
     dc_type = 'D', type = 'Expense',
+    first_due_date = null,
 }) {
     const resolvedBeneficiaryId = await resolveBeneficiaryId(beneficiary_id, beneficiary_name || beneficiary);
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = todayISO();
+    const dueBase = first_due_date || today;
     const n = installments || 1;
     const rows = [];
     for (let i = 0; i < n; i++) {
         rows.push({
             account_id,
             emission_date: today,
-            due_date: addMonths(today, i),
+            due_date: addMonths(dueBase, i),
             description: n > 1 ? `${description || beneficiary} (${i + 1}/${n})` : (description || beneficiary),
             amount: amount / n,
             dc_type,
