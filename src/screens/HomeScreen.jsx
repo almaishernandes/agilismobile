@@ -3,15 +3,18 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'rea
 import { useDrafts } from '../context/DraftContext';
 import { signOut } from '../lib/auth';
 import QRScreen from './QRScreen';
+import VoiceScreen from './VoiceScreen';
 import ManualScreen from './ManualScreen';
 
 function fmtBRL(n) {
     return `R$ ${Number(n || 0).toFixed(2).replace('.', ',')}`;
 }
 
+// A foto do comprovante deixou de ser uma aba própria: agora é um passo
+// oferecido logo após gravar o lançamento, em qualquer uma das 3 abas.
 const TABS = {
     qr: { label: 'QR Code', icon: '📷', style: 'qBtnQR', Component: QRScreen, props: { forcedMode: 'qr' } },
-    photo: { label: 'Foto', icon: '🧾', style: 'qBtnVoice', Component: QRScreen, props: { forcedMode: 'photo' } },
+    voice: { label: 'Voz', icon: '🎤', style: 'qBtnVoice', Component: VoiceScreen },
     manual: { label: 'Digitação', icon: '📝', style: 'qBtnManual', Component: ManualScreen },
 };
 

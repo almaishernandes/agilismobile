@@ -6,13 +6,46 @@ function addMonths(iso, n) {
     return d.toISOString().split('T')[0];
 }
 
+// Resolve o id do fornecedor em `beneficiaries` a partir do que veio do
+// BeneficiaryPicker: se já veio com id (escolhido da lista), usa direto.
+// Se veio só o nome (digitado, ainda não cadastrado), tenta achar por nome
+// exato (evita duplicar por causa de reenvio) e, não achando, cadastra —
+// mesmo comportamento do "cadastrar agora" do formulário web (Transactions.jsx).
+export async function resolveBeneficiaryId(beneficiary_id, beneficiary_name) {
+    if (beneficiary_id) return beneficiary_id;
+    const name = (beneficiary_name || '').trim();
+    if (!name) return null;
+
+    const { data: existing } = await supabase
+        .from('beneficiaries')
+        .select('id')
+        .ilike('name', name)
+        .maybeSingle();
+    if (existing?.id) return existing.id;
+
+    const { data: created, error } = await supabase
+        .from('beneficiaries')
+        .insert([{ name, level: 2 }])
+        .select()
+        .single();
+    if (error) {
+        console.warn('Não foi possível cadastrar novo fornecedor:', error.message);
+        return null;
+    }
+    return created.id;
+}
+
 // Grava um lançamento (com parcelas, se houver) direto na tabela transactions,
 // dentro da movimentação (conta) selecionada — mesmo formato usado no
 // fechamento do dia (ReviewScreen), só que na hora, sem esperar o export.
 export async function insertTransaction(ctx, {
     account_id, amount, beneficiary, description, installments = 1,
     cost_center_id = null, transaction_type_id = null,
+    beneficiary_id = null, beneficiary_name = '',
+    dc_type = 'D', type = 'Expense',
 }) {
+    const resolvedBeneficiaryId = await resolveBeneficiaryId(beneficiary_id, beneficiary_name || beneficiary);
+
     const today = new Date().toISOString().split('T')[0];
     const n = installments || 1;
     const rows = [];
@@ -23,9 +56,9 @@ export async function insertTransaction(ctx, {
             due_date: addMonths(today, i),
             description: n > 1 ? `${description || beneficiary} (${i + 1}/${n})` : (description || beneficiary),
             amount: amount / n,
-            dc_type: 'D',
-            type: 'Expense',
-            beneficiary_id: null,
+            dc_type,
+            type,
+            beneficiary_id: resolvedBeneficiaryId,
             cost_center_id,
             transaction_type_id,
             user_id: ctx?.user_id ?? null,

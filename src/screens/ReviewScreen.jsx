@@ -6,6 +6,7 @@ import { useDrafts } from '../context/DraftContext';
 import { getSecurityContext } from '../lib/auth';
 import { supabase } from '../lib/supabase';
 import { buildPdfHtml } from '../lib/pdfGenerator';
+import { resolveBeneficiaryId } from '../lib/transactionSync';
 
 function fmtBRL(n) { return `R$ ${Number(n || 0).toFixed(2).replace('.', ',')}`; }
 function addMonths(iso, n) {
@@ -69,6 +70,11 @@ export default function ReviewScreen({ navigation }) {
             // Build transaction rows (expand installments)
             const txRows = [];
             for (const d of txDrafts) {
+                // Mesma resolução usada no lançamento imediato (transactionSync.js):
+                // reaproveita o id se já veio de um fornecedor cadastrado, ou
+                // cria/casa por nome — garante paridade entre gravação na hora
+                // e reenvio no fechamento do dia.
+                const beneficiaryId = await resolveBeneficiaryId(d.beneficiary_id, d.beneficiary_name || d.beneficiary);
                 const n = d.installments || 1;
                 for (let i = 0; i < n; i++) {
                     txRows.push({
@@ -77,9 +83,9 @@ export default function ReviewScreen({ navigation }) {
                         due_date: addMonths(today, i),
                         description: n > 1 ? `${d.description || d.beneficiary} (${i + 1}/${n})` : (d.description || d.beneficiary),
                         amount: (d.amount || 0) / n,
-                        dc_type: 'D',
-                        type: 'Expense',
-                        beneficiary_id: null,
+                        dc_type: d.dc_type || 'D',
+                        type: d.flow_type || 'Expense',
+                        beneficiary_id: beneficiaryId,
                         user_id: ctx.user_id,
                         family_id: ctx.family_id,
                     });
