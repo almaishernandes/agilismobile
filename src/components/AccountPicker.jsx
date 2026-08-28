@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 import { supabase } from '../lib/supabase';
-import { getSecurityContext } from '../lib/auth';
 import BottomSheet from './BottomSheet';
 
 export default function AccountPicker({ selected, onSelect }) {
@@ -9,17 +8,18 @@ export default function AccountPicker({ selected, onSelect }) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
 
+    // Mesma consulta usada no Agilis-Web (AccountManager): busca todas as
+    // contas, sem filtrar por family_id — o escopo é feito por RLS no
+    // banco, não no client. Filtrar aqui deixava a lista vazia quando o
+    // family_id do perfil não batia exatamente com o das contas.
     const load = async () => {
         setLoading(true);
-        const ctx = await getSecurityContext();
-        if (ctx?.family_id) {
-            const { data } = await supabase
-                .from('accounts')
-                .select('id, name, account_type')
-                .eq('family_id', ctx.family_id)
-                .order('name');
-            setAccounts(data || []);
-        }
+        const { data, error } = await supabase
+            .from('accounts')
+            .select('id, name, account_type')
+            .order('name');
+        if (error) console.error('Erro ao carregar contas:', error);
+        setAccounts(data || []);
         setLoading(false);
     };
 
