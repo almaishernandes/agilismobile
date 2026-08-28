@@ -21,12 +21,14 @@ export default function BeneficiaryPicker({ value, onChange, placeholder = 'Sele
 
     const handleOpen = () => {
         if (beneficiaries.length === 0) load();
-        setSearch(value || '');
+        setSearch(value?.name || '');
         setOpen(true);
     };
 
-    const handlePick = (name) => {
-        onChange(name);
+    // item existente da lista → id real; texto novo digitado → id null
+    // (resolvido/cadastrado no momento de gravar, em transactionSync.js)
+    const handlePick = (item) => {
+        onChange(item.id ? { id: item.id, name: item.name } : { id: null, name: item.name });
         setOpen(false);
     };
 
@@ -38,7 +40,7 @@ export default function BeneficiaryPicker({ value, onChange, placeholder = 'Sele
     return (
         <>
             <TouchableOpacity style={s.selector} onPress={handleOpen}>
-                <Text style={value ? s.selectorText : s.selectorPlaceholder}>{value || placeholder}</Text>
+                <Text style={value ? s.selectorText : s.selectorPlaceholder}>{value?.name || placeholder}</Text>
                 <Text style={s.arrow}>›</Text>
             </TouchableOpacity>
 
@@ -63,18 +65,19 @@ export default function BeneficiaryPicker({ value, onChange, placeholder = 'Sele
 
                 {loading ? <ActivityIndicator color="#CCFF00" style={{ margin: 24 }} /> : (
                     <FlatList
+                        style={s.list}
                         data={filtered}
                         keyExtractor={i => i.id}
                         ListHeaderComponent={
                             search.trim() && !exactMatch ? (
-                                <TouchableOpacity style={s.newRow} onPress={() => handlePick(search.trim())}>
+                                <TouchableOpacity style={s.newRow} onPress={() => handlePick({ id: null, name: search.trim() })}>
                                     <Text style={s.newRowText}>+ Usar "{search.trim()}"</Text>
                                     <Text style={s.newRowHint}>Novo fornecedor (não cadastrado)</Text>
                                 </TouchableOpacity>
                             ) : null
                         }
                         renderItem={({ item }) => (
-                            <TouchableOpacity style={s.row} onPress={() => handlePick(item.name)}>
+                            <TouchableOpacity style={s.row} onPress={() => handlePick(item)}>
                                 <Text style={s.rowName}>{item.name}</Text>
                                 {!!item.category && <Text style={s.rowCategory}>{item.category}</Text>}
                             </TouchableOpacity>
@@ -97,6 +100,7 @@ const s = StyleSheet.create({
     sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingBottom: 12 },
     sheetTitle: { color: '#CCFF00', fontWeight: '800', fontSize: 16 },
     sheetClose: { color: '#94a3b8', fontSize: 20 },
+    list: { maxHeight: 320 },
     searchWrap: { paddingHorizontal: 20, paddingBottom: 12 },
     searchInput: { backgroundColor: '#0f172a', color: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#334155', padding: 12, fontSize: 15 },
     newRow: { padding: 18, backgroundColor: 'rgba(204,255,0,0.08)', borderBottomWidth: 1, borderBottomColor: '#0f172a' },

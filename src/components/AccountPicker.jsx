@@ -44,6 +44,7 @@ export default function AccountPicker({ selected, onSelect }) {
                 </View>
                 {loading ? <ActivityIndicator color="#CCFF00" style={{ margin: 24 }} /> : (
                     <FlatList
+                        style={s.list}
                         data={accounts}
                         keyExtractor={i => i.id}
                         renderItem={({ item }) => (
@@ -66,6 +67,7 @@ const s = StyleSheet.create({
     sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#334155' },
     sheetTitle: { color: '#CCFF00', fontWeight: '800', fontSize: 16 },
     sheetClose: { color: '#94a3b8', fontSize: 20 },
+    list: { maxHeight: 360 },
     accountRow: { padding: 18, borderBottomWidth: 1, borderBottomColor: '#0f172a' },
     accountName: { color: '#fff', fontSize: 16, fontWeight: '700' },
     accountType: { color: '#89962F', fontSize: 12, marginTop: 2 },

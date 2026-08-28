@@ -67,6 +67,7 @@ export default function TablePicker({
 
                 {loading ? <ActivityIndicator color="#CCFF00" style={{ margin: 24 }} /> : (
                     <FlatList
+                        style={s.list}
                         data={filtered}
                         keyExtractor={i => String(i.id)}
                         renderItem={({ item }) => (
@@ -90,6 +91,7 @@ const s = StyleSheet.create({
     sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingBottom: 12 },
     sheetTitle: { color: '#CCFF00', fontWeight: '800', fontSize: 16 },
     sheetClose: { color: '#94a3b8', fontSize: 20 },
+    list: { maxHeight: 320 },
     searchWrap: { paddingHorizontal: 20, paddingBottom: 12 },
     searchInput: { backgroundColor: '#0f172a', color: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#334155', padding: 12, fontSize: 15 },
     row: { padding: 18, borderBottomWidth: 1, borderBottomColor: '#0f172a' },
