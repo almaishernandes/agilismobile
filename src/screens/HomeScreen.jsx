@@ -12,6 +12,15 @@ function fmtBRL(n) {
     return `R$ ${Number(n || 0).toFixed(2).replace('.', ',')}`;
 }
 
+function DraftDetailRow({ label, value }) {
+    return (
+        <View style={s.draftDetailRow}>
+            <Text style={s.draftDetailLabel}>{label}</Text>
+            <Text style={s.draftDetailValue}>{value}</Text>
+        </View>
+    );
+}
+
 // Saldo por conta, agrupado por tipo (account_type) — mesma lógica do
 // AgilisWeb (SaldoContas.jsx): soma amount com sinal conforme dc_type
 // ('C' credita, 'D' debita), sem filtro de family_id no client (RLS cuida).
@@ -101,10 +110,23 @@ const TABS = {
     report: { label: 'Lançamentos', icon: '📊', style: 'qBtnReport', Component: TransactionsReport },
 };
 
+function isToday(iso) {
+    if (!iso) return false;
+    const d = new Date(iso);
+    const now = new Date();
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+}
+
 export default function HomeScreen({ navigation }) {
-    const { drafts, totalAmount, removeDraft } = useDrafts();
+    const { drafts: allDrafts, removeDraft } = useDrafts();
     const [activeTab, setActiveTab] = useState(null);
     const [selectedAccount, setSelectedAccount] = useState(null);
+    const [expandedDraftId, setExpandedDraftId] = useState(null);
+
+    // O relatório de rascunhos zera todo dia: só mostra o que foi lançado
+    // hoje, mesmo que rascunhos de dias anteriores ainda estejam salvos.
+    const drafts = allDrafts.filter(d => isToday(d.date_created));
+    const totalAmount = drafts.reduce((s, d) => s + (d.amount || 0), 0);
 
     const handleDelete = (id) => {
         Alert.alert('Remover', 'Deseja remover este rascunho?', [
@@ -189,26 +211,40 @@ export default function HomeScreen({ navigation }) {
                                 <Text style={s.emptyText}>Nenhum rascunho ainda.{'\n'}Adicione lançamentos acima.</Text>
                             </View>
                         ) : (
-                            drafts.map(d => (
-                                <View key={d.id} style={s.draftCard}>
-                                    <View style={s.draftLeft}>
-                                        <Text style={s.draftType}>
-                                            {d.type === 'nfce_import' ? '🧾 NFC-e' : d.chave_nfce ? '🧾' : d.photo_uri ? '📷' : '📝'}
-                                        </Text>
-                                        <View>
-                                            <Text style={s.draftBenef}>{d.beneficiary || d.chave_nfce || 'Sem fornecedor'}</Text>
-                                            <Text style={s.draftDesc}>{d.description || d.account_name || ''}</Text>
-                                            {d.installments > 1 && <Text style={s.draftInstall}>{d.installments}x parcelas</Text>}
-                                        </View>
-                                    </View>
-                                    <View style={s.draftRight}>
-                                        <Text style={s.draftAmount}>{d.amount ? fmtBRL(d.amount) : '—'}</Text>
-                                        <TouchableOpacity onPress={() => handleDelete(d.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                                            <Text style={s.draftDel}>✕</Text>
+                            drafts.map(d => {
+                                const open = expandedDraftId === d.id;
+                                return (
+                                    <View key={d.id} style={s.draftCard}>
+                                        <TouchableOpacity
+                                            style={s.draftRow}
+                                            onPress={() => setExpandedDraftId(open ? null : d.id)}
+                                            activeOpacity={0.7}
+                                        >
+                                            <Text style={s.draftRowArrow}>{open ? '▾' : '▸'}</Text>
+                                            <Text style={s.draftRowIcon}>
+                                                {d.type === 'nfce_import' ? '🧾' : d.chave_nfce ? '🧾' : d.photo_uri ? '📷' : '📝'}
+                                            </Text>
+                                            <Text style={s.draftRowLabel} numberOfLines={1}>{d.beneficiary || d.chave_nfce || 'Sem fornecedor'}</Text>
+                                            <Text style={s.draftAmount}>{d.amount ? fmtBRL(d.amount) : '—'}</Text>
+                                            <TouchableOpacity onPress={() => handleDelete(d.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                                                <Text style={s.draftDel}>✕</Text>
+                                            </TouchableOpacity>
                                         </TouchableOpacity>
+
+                                        {open && (
+                                            <View style={s.draftDetail}>
+                                                <DraftDetailRow label="Conta" value={d.account_name || '—'} />
+                                                <DraftDetailRow label="Descrição" value={d.description || '—'} />
+                                                <DraftDetailRow label="Valor" value={fmtBRL(d.amount)} />
+                                                <DraftDetailRow label="Tipo" value={d.dc_type === 'C' ? 'Entrada' : d.dc_type === 'T' ? 'Transferência' : 'Saída'} />
+                                                <DraftDetailRow label="Parcelas" value={`${d.installments || 1}x`} />
+                                                <DraftDetailRow label="Registrado em" value={new Date(d.date_created).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} />
+                                                <DraftDetailRow label="Status" value={d.synced ? '✓ Gravado no banco' : '⏳ Pendente de reenvio'} />
+                                            </View>
+                                        )}
                                     </View>
-                                </View>
-                            ))
+                                );
+                            })
                         )}
                     </ScrollView>
 
@@ -277,15 +313,17 @@ const s = StyleSheet.create({
     emptyIcon: { fontSize: 40, marginBottom: 12 },
     emptyText: { color: '#94a3b8', textAlign: 'center', lineHeight: 22 },
 
-    draftCard: { backgroundColor: '#1e293b', borderRadius: 12, padding: 14, marginBottom: 10, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#334155' },
-    draftLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
-    draftType: { fontSize: 22 },
-    draftBenef: { color: '#fff', fontWeight: '700', fontSize: 14 },
-    draftDesc: { color: '#94a3b8', fontSize: 12, marginTop: 2 },
-    draftInstall: { color: '#89962F', fontSize: 11, marginTop: 2 },
-    draftRight: { alignItems: 'flex-end', gap: 8 },
-    draftAmount: { color: '#CCFF00', fontWeight: '900', fontSize: 15 },
-    draftDel: { color: '#475569', fontSize: 16 },
+    draftCard: { backgroundColor: '#1e293b', borderRadius: 12, marginBottom: 8, borderWidth: 1, borderColor: '#334155', overflow: 'hidden' },
+    draftRow: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12 },
+    draftRowArrow: { color: '#CCFF00', fontSize: 13, width: 14, textAlign: 'center' },
+    draftRowIcon: { fontSize: 16 },
+    draftRowLabel: { flex: 1, color: '#fff', fontWeight: '700', fontSize: 13 },
+    draftAmount: { color: '#CCFF00', fontWeight: '900', fontSize: 14 },
+    draftDel: { color: '#475569', fontSize: 16, paddingLeft: 4 },
+    draftDetail: { borderTopWidth: 1, borderTopColor: '#0f172a', padding: 12, paddingTop: 8 },
+    draftDetailRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: '#0f172a' },
+    draftDetailLabel: { color: '#89962F', fontSize: 11, flexShrink: 0, marginRight: 8 },
+    draftDetailValue: { color: '#fff', fontSize: 12, fontWeight: '600', flexShrink: 1, textAlign: 'right' },
 
     footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16, backgroundColor: '#0f172a', borderTopWidth: 1, borderTopColor: '#1e293b' },
     closeBtn: { backgroundColor: '#CCFF00', borderRadius: 14, padding: 18, alignItems: 'center' },
