@@ -23,6 +23,7 @@ const STEP_LABELS = {
     beneficiary: 'Fornecedor',
     costCenter: 'Centro de Custos',
     chartAccount: 'Plano de Contas',
+    description: 'Descrição do Lançamento',
 };
 
 const EMPTY_VALUES = {
@@ -36,6 +37,7 @@ const EMPTY_VALUES = {
     beneficiary: null,
     costCenterItems: [], // [{ id, full_code, description, amount }]
     chartAccount: null,
+    description: '',
 };
 
 const isCreditCard = (account) => (account?.account_type || '').toLowerCase().includes('cart');
@@ -51,7 +53,7 @@ function buildSteps(dcType, account, fixedAccount) {
     }
     const steps = fixedAccount ? ['amount', 'flowType'] : ['amount', 'flowType', 'account'];
     if (isCreditCard(account)) steps.push('installments');
-    steps.push('beneficiary', 'costCenter', 'chartAccount', 'review');
+    steps.push('beneficiary', 'costCenter', 'chartAccount', 'description', 'review');
     return steps;
 }
 
@@ -154,6 +156,62 @@ function NumberField({ label, active, onDone }) {
     );
 }
 
+// Descrição do lançamento — texto livre, digitado ou ditado (mesmo mic
+// sob-demanda do Valor). Vem pré-preenchida com o nome do fornecedor, mas
+// pode ser ajustada antes de gravar.
+function DescriptionField({ active, value, onChange, onDone }) {
+    const [listening, setListening] = useState(false);
+    const recognitionRef = useRef(null);
+
+    useEffect(() => () => recognitionRef.current?.stop(), []);
+
+    if (!active) return null;
+
+    const startListening = () => {
+        if (!SpeechRecognitionAPI) { Alert.alert('Reconhecimento de voz não disponível neste navegador.'); return; }
+        const recognition = new SpeechRecognitionAPI();
+        recognition.lang = 'pt-BR';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.onresult = (event) => {
+            const text = event.results[0]?.[0]?.transcript || '';
+            if (text) onChange(text);
+        };
+        recognition.onend = () => setListening(false);
+        recognition.onerror = () => setListening(false);
+        recognitionRef.current = recognition;
+        recognition.start();
+        setListening(true);
+    };
+
+    return (
+        <View style={s.stepBox}>
+            <Text style={s.stepLabel}>{STEP_LABELS.description}</Text>
+            <View style={s.voiceRow}>
+                <TextInput
+                    style={[s.input, { flex: 1 }]}
+                    value={value}
+                    onChangeText={onChange}
+                    placeholder="Ex.: Compra de material de escritório"
+                    placeholderTextColor="#475569"
+                    autoFocus
+                    onSubmitEditing={onDone}
+                />
+                <TouchableOpacity
+                    style={[s.micBtn, listening && s.micBtnActive]}
+                    onPress={startListening}
+                    disabled={listening}
+                >
+                    {listening ? <ActivityIndicator color="#0f172a" size="small" /> : <Text style={s.micBtnText}>🎤</Text>}
+                </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={[s.saveBtn, { marginTop: 12 }]} onPress={onDone}>
+                <Text style={s.saveBtnText}>Avançar</Text>
+            </TouchableOpacity>
+        </View>
+    );
+}
+
 // Parcelas quase sempre é 1 — já vem preenchido, só espera Enter. Se
 // precisar de outro número, edita e aperta Enter (sem voz, sem botão à
 // parte).
@@ -246,6 +304,14 @@ export default function EntrySequence({ navigation, account: fixedAccount }) {
         supabase.from('cost_centers').select('id, full_code, description').order('full_code')
             .then(({ data }) => setCostCenters(data || []));
     }, []);
+
+    // Pré-preenche a Descrição com o nome do fornecedor ao chegar nessa
+    // etapa pela primeira vez — o usuário ainda pode ajustar antes de gravar.
+    useEffect(() => {
+        if (step === 'description' && !values.description && values.beneficiary?.name) {
+            setValues(v => ({ ...v, description: v.beneficiary?.name || '' }));
+        }
+    }, [step]);
 
     const advance = () => setStepIndex(i => Math.min(i + 1, STEPS.length - 1));
     const goBackStep = () => setStepIndex(i => Math.max(i - 1, 0));
@@ -362,7 +428,7 @@ export default function EntrySequence({ navigation, account: fixedAccount }) {
             beneficiary: values.beneficiary?.name || '',
             beneficiary_id: values.beneficiary?.id ?? null,
             beneficiary_name: values.beneficiary?.name || '',
-            description: values.beneficiary?.name || '',
+            description: values.description || values.beneficiary?.name || '',
             installments: values.installments,
             cost_center_id: singleCc?.id ?? null,
             transaction_type_id: values.chartAccount?.id ?? null,
@@ -405,7 +471,7 @@ export default function EntrySequence({ navigation, account: fixedAccount }) {
             beneficiary: values.beneficiary?.name || '',
             beneficiary_id: values.beneficiary?.id ?? null,
             beneficiary_name: values.beneficiary?.name || '',
-            description: values.beneficiary?.name || '',
+            description: values.description || values.beneficiary?.name || '',
             installments: values.installments,
             dc_type: values.dc_type,
             flow_type: values.type,
@@ -746,6 +812,13 @@ export default function EntrySequence({ navigation, account: fixedAccount }) {
                     </View>
                 )}
 
+                <DescriptionField
+                    active={step === 'description'}
+                    value={values.description}
+                    onChange={(txt) => setValues(v => ({ ...v, description: txt }))}
+                    onDone={advance}
+                />
+
                 {step === 'review' && (
                     <View style={s.stepBox}>
                         <Text style={s.stepLabel}>Conferência (toque num campo para editar)</Text>
@@ -769,6 +842,7 @@ export default function EntrySequence({ navigation, account: fixedAccount }) {
                                     <DoneRow key={idx} label={`↳ ${it.description}`} value={fmtBRL(it.amount)} onEdit={() => goToStep('costCenter')} />
                                 ))}
                                 <DoneRow label="Plano de Contas" value={values.chartAccount?.description || '—'} onEdit={() => goToStep('chartAccount')} />
+                                <DoneRow label="Descrição" value={values.description || '—'} onEdit={() => goToStep('description')} />
                             </>
                         )}
 
