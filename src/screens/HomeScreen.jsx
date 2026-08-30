@@ -4,7 +4,6 @@ import { useDrafts } from '../context/DraftContext';
 import { signOut } from '../lib/auth';
 import { supabase } from '../lib/supabase';
 import QRScreen from './QRScreen';
-import VoiceScreen from './VoiceScreen';
 import ManualScreen from './ManualScreen';
 import TransactionsReport from './TransactionsReport';
 
@@ -105,7 +104,6 @@ function AccountGroupPicker({ onSelectAccount }) {
 // oferecido logo após gravar o lançamento, em qualquer uma das 3 abas.
 const TABS = {
     qr: { label: 'QR Code', icon: '📷', style: 'qBtnQR', Component: QRScreen, props: { forcedMode: 'qr' } },
-    voice: { label: 'Voz', icon: '🎤', style: 'qBtnVoice', Component: VoiceScreen },
     manual: { label: 'Digitação', icon: '📝', style: 'qBtnManual', Component: ManualScreen },
     report: { label: 'Lançamentos', icon: '📊', style: 'qBtnReport', Component: TransactionsReport },
 };
@@ -296,7 +294,6 @@ const s = StyleSheet.create({
     qBtn: { flex: 1, borderRadius: 12, padding: 10, alignItems: 'center', justifyContent: 'center', minHeight: 60, borderWidth: 1 },
     qBtnActive: { borderColor: '#CCFF00', borderWidth: 2, backgroundColor: '#263a1e' },
     qBtnQR: { backgroundColor: '#1e293b', borderColor: '#004d40' },
-    qBtnVoice: { backgroundColor: '#1e293b', borderColor: '#89962F' },
     qBtnManual: { backgroundColor: '#1e293b', borderColor: '#334155' },
     qBtnReport: { backgroundColor: '#1e293b', borderColor: '#1565c0' },
     qIcon: { fontSize: 18, marginBottom: 3 },

@@ -83,17 +83,23 @@ function fmtDateBR(iso) {
     return `${d}/${m}/${y}`;
 }
 
-// Campo numérico (Valor / Parcelas). Em modo voz, começa ouvindo
-// automaticamente ao entrar no passo, com botão "Digitar" como
-// alternativa. Em modo digitação, vai direto pro teclado.
-function NumberField({ label, active, onDone, voiceEnabled }) {
+// Campo numérico (Valor / Parcelas). Vai direto pro teclado; o microfone
+// fica disponível ao lado do campo pra quem preferir ditar o número em vez
+// de digitar — sem etapa separada de "modo voz".
+function NumberField({ label, active, onDone }) {
     const [listening, setListening] = useState(false);
-    const [manual, setManual] = useState(!voiceEnabled);
     const [manualText, setManualText] = useState('');
     const recognitionRef = useRef(null);
 
     useEffect(() => {
-        if (!active || !voiceEnabled || !SpeechRecognitionAPI || manual) return;
+        if (active) setManualText('');
+        return () => recognitionRef.current?.stop();
+    }, [active]);
+
+    if (!active) return null;
+
+    const startListening = () => {
+        if (!SpeechRecognitionAPI) { Alert.alert('Reconhecimento de voz não disponível neste navegador.'); return; }
         const recognition = new SpeechRecognitionAPI();
         recognition.lang = 'pt-BR';
         recognition.continuous = false;
@@ -101,61 +107,49 @@ function NumberField({ label, active, onDone, voiceEnabled }) {
         recognition.onresult = (event) => {
             const text = event.results[0]?.[0]?.transcript || '';
             const n = parseSpokenNumber(text);
-            if (n !== null) onDone(n);
+            if (n !== null) onDone(n); else setManualText(text);
         };
         recognition.onend = () => setListening(false);
         recognition.onerror = () => setListening(false);
         recognitionRef.current = recognition;
         recognition.start();
         setListening(true);
-        return () => recognition.stop();
-    }, [active, manual, voiceEnabled]);
-
-    useEffect(() => {
-        if (active) { setManual(!voiceEnabled); setManualText(''); }
-    }, [active]);
-
-    if (!active) return null;
+    };
 
     return (
         <View style={s.stepBox}>
             <Text style={s.stepLabel}>{label}</Text>
-            {!manual ? (
-                <View style={s.voiceRow}>
-                    <View style={s.listeningPill}>
-                        {listening && <ActivityIndicator color="#CCFF00" size="small" />}
-                        <Text style={s.listeningText}>{listening ? 'Ouvindo...' : 'Aguardando...'}</Text>
-                    </View>
-                    <TouchableOpacity style={s.digitBtn} onPress={() => { recognitionRef.current?.stop(); setManual(true); }}>
-                        <Text style={s.digitBtnText}>Digitar</Text>
-                    </TouchableOpacity>
-                </View>
-            ) : (
-                <View style={s.voiceRow}>
-                    <TextInput
-                        style={[s.input, { flex: 1 }]}
-                        value={manualText}
-                        onChangeText={setManualText}
-                        placeholder="0"
-                        placeholderTextColor="#475569"
-                        keyboardType="decimal-pad"
-                        autoFocus
-                        onSubmitEditing={() => {
-                            const n = parseFloat(manualText.replace(',', '.'));
-                            if (n) onDone(n);
-                        }}
-                    />
-                    <TouchableOpacity
-                        style={s.confirmBtn}
-                        onPress={() => {
-                            const n = parseFloat(manualText.replace(',', '.'));
-                            if (n) onDone(n); else Alert.alert('Informe um número válido.');
-                        }}
-                    >
-                        <Text style={s.confirmBtnText}>✓</Text>
-                    </TouchableOpacity>
-                </View>
-            )}
+            <View style={s.voiceRow}>
+                <TextInput
+                    style={[s.input, { flex: 1 }]}
+                    value={manualText}
+                    onChangeText={setManualText}
+                    placeholder="0"
+                    placeholderTextColor="#475569"
+                    keyboardType="decimal-pad"
+                    autoFocus
+                    onSubmitEditing={() => {
+                        const n = parseFloat(manualText.replace(',', '.'));
+                        if (n) onDone(n);
+                    }}
+                />
+                <TouchableOpacity
+                    style={[s.micBtn, listening && s.micBtnActive]}
+                    onPress={startListening}
+                    disabled={listening}
+                >
+                    {listening ? <ActivityIndicator color="#0f172a" size="small" /> : <Text style={s.micBtnText}>🎤</Text>}
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={s.confirmBtn}
+                    onPress={() => {
+                        const n = parseFloat(manualText.replace(',', '.'));
+                        if (n) onDone(n); else Alert.alert('Informe um número válido.');
+                    }}
+                >
+                    <Text style={s.confirmBtnText}>✓</Text>
+                </TouchableOpacity>
+            </View>
         </View>
     );
 }
@@ -224,7 +218,7 @@ const CALC_KEYS = [
 // já escolhida na tela de saldos), a etapa "Conta" é pulada e o lançamento
 // fica preso a essa conta — mesmo padrão do modal "+ Novo Lançamento" do
 // AgilisWeb, aberto a partir da página de uma conta específica.
-export default function EntrySequence({ navigation, voiceEnabled, account: fixedAccount }) {
+export default function EntrySequence({ navigation, account: fixedAccount }) {
     const { addDraft } = useDrafts();
     const [stepIndex, setStepIndex] = useState(0);
     const [values, setValues] = useState(() => ({ ...EMPTY_VALUES, account: fixedAccount || null }));
@@ -520,7 +514,6 @@ export default function EntrySequence({ navigation, voiceEnabled, account: fixed
                     label={STEP_LABELS.amount}
                     active={step === 'amount'}
                     onDone={(n) => setValue('amount', n)}
-                    voiceEnabled={voiceEnabled}
                 />
 
                 {step === 'amount' && (
@@ -813,10 +806,9 @@ const s = StyleSheet.create({
     stepLabel: { color: '#89962F', fontSize: 11, letterSpacing: 1, marginBottom: 6 },
 
     voiceRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    listeningPill: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#0f172a', borderRadius: 10, borderWidth: 1, borderColor: '#334155', padding: 12 },
-    listeningText: { color: '#94a3b8', fontSize: 14 },
-    digitBtn: { backgroundColor: '#004d40', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 16 },
-    digitBtnText: { color: '#CCFF00', fontWeight: '700', fontSize: 13 },
+    micBtn: { backgroundColor: '#0f172a', borderRadius: 10, borderWidth: 1, borderColor: '#89962F', paddingVertical: 12, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center' },
+    micBtnActive: { backgroundColor: '#CCFF00', borderColor: '#CCFF00' },
+    micBtnText: { fontSize: 16 },
 
     flowTypeRow: { flexDirection: 'row', gap: 10 },
     flowTypeBtn: { flex: 1, borderRadius: 10, paddingVertical: 16, alignItems: 'center', borderWidth: 1 },
