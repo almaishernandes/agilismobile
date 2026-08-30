@@ -5,6 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useDrafts } from '../context/DraftContext';
 import AccountPicker from '../components/AccountPicker';
 import CameraScanner from '../components/CameraScanner';
+import EntrySequence from './EntrySequence';
 import { supabase } from '../lib/supabase';
 import { getSecurityContext } from '../lib/auth';
 import { uploadComprovante } from '../lib/storageUpload';
@@ -32,6 +33,7 @@ export default function QRScreen({ navigation, forcedMode, account: presetAccoun
     const [photo, setPhoto] = useState(null);
     const [account, setAccount] = useState(presetAccount || null);
     const [uploadingPhoto, setUploadingPhoto] = useState(false);
+    const [entryStarted, setEntryStarted] = useState(false);
 
     const handleBarcode = async ({ data }) => {
         if (scanned) return;
@@ -58,42 +60,35 @@ export default function QRScreen({ navigation, forcedMode, account: presetAccoun
         if (!result.canceled) setPhoto(result.assets[0].uri);
     };
 
-    const handleSaveQR = async () => {
-        if (!account) { Alert.alert('Selecione uma conta antes de salvar.'); return; }
-        const chave = nfceData?.chave_nfce || extractChave(scannedData);
-        const emitente = nfceData?.emitente || extractEmitente(scannedData);
+    // Usa os dados extraídos do QR Code (ou o que der pra extrair, se a
+    // leitura automática falhar) como ponto de partida do mesmo fluxo de
+    // lançamento da Digitação — Valor e Fornecedor já vêm pré-preenchidos,
+    // mas o usuário confere/edita tudo (Tipo, Centro de Custos, Plano de
+    // Contas, Descrição) antes de gravar. Isso faz o QR Code virar um
+    // lançamento de verdade em `transactions`, e não só um registro solto
+    // em nfce_imports.
+    const chaveAtual = nfceData?.chave_nfce || extractChave(scannedData);
+    const emitenteAtual = nfceData?.emitente || extractEmitente(scannedData);
 
-        // Grava em nfce_imports para aparecer em tempo real no painel web
-        // (Integração → NFC-App Agilis), que compartilha o mesmo banco. O QR
-        // Code já vem com dados completos e confiáveis, então vai direto —
-        // diferente de voz/digitação, que ficam pendentes de revisão.
+    const handleUseData = () => {
+        if (!account) { Alert.alert('Selecione uma conta antes de continuar.'); return; }
+        setEntryStarted(true);
+    };
+
+    // Depois que o lançamento real é gravado, deixa também um registro em
+    // nfce_imports (auditoria/rastreio do QR) vinculado a ele — aparece no
+    // painel web (Integração → NFC-App Agilis) e guarda a chave de acesso.
+    const handleEntrySaved = async (rows) => {
         const ctx = await getSecurityContext();
-        const { error } = await supabase.from('nfce_imports').insert([{
-            chave,
-            emitente_nome: emitente || 'Lido via QR Code',
+        await supabase.from('nfce_imports').insert([{
+            chave: chaveAtual,
+            emitente_nome: emitenteAtual || 'Lido via QR Code',
             valor_total: nfceData?.amount ?? null,
             metodo: 'app_mobile',
-            raw_data: { qr_url: scannedData, fonte: 'app_mobile' },
+            raw_data: { qr_url: scannedData, fonte: 'app_mobile', transaction_id: rows?.[0]?.id ?? null },
             user_id: ctx?.user_id ?? null,
             family_id: ctx?.family_id ?? null,
         }]);
-
-        if (error) {
-            Alert.alert('Aviso', 'Não foi possível enviar ao banco agora. O item foi salvo no rascunho e será reenviado ao fechar o dia.');
-        }
-
-        addDraft({
-            type: 'nfce_import',
-            account_id: account.id,
-            account_name: account.name,
-            beneficiary: emitente,
-            description: 'NFC-e via QR Code',
-            chave_nfce: chave,
-            amount: nfceData?.amount,
-            synced: !error,
-        });
-
-        navigation.goBack();
     };
 
     const handleSavePhoto = async () => {
@@ -132,6 +127,20 @@ export default function QRScreen({ navigation, forcedMode, account: presetAccoun
         });
         navigation.goBack();
     };
+
+    if (entryStarted) {
+        return (
+            <EntrySequence
+                navigation={navigation}
+                account={account}
+                prefill={{
+                    amount: nfceData?.amount ?? null,
+                    beneficiaryName: emitenteAtual || '',
+                }}
+                onSaved={handleEntrySaved}
+            />
+        );
+    }
 
     if (!permission) return <View style={s.container} />;
     if (!permission.granted) {
@@ -200,8 +209,8 @@ export default function QRScreen({ navigation, forcedMode, account: presetAccoun
                         <TouchableOpacity style={s.btnSecondary} onPress={() => { setScanned(false); setScannedData(null); setNfceData(null); }}>
                             <Text style={s.btnSecondaryText}>Reler</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={s.btnPrimary} onPress={handleSaveQR} disabled={processing}>
-                            <Text style={s.btnPrimaryText}>✓ Salvar Rascunho</Text>
+                        <TouchableOpacity style={s.btnPrimary} onPress={handleUseData} disabled={processing}>
+                            <Text style={s.btnPrimaryText}>✓ Usar estes dados</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

@@ -88,13 +88,13 @@ function fmtDateBR(iso) {
 // Campo numérico (Valor / Parcelas). Vai direto pro teclado; o microfone
 // fica disponível ao lado do campo pra quem preferir ditar o número em vez
 // de digitar — sem etapa separada de "modo voz".
-function NumberField({ label, active, onDone }) {
+function NumberField({ label, active, onDone, initialValue }) {
     const [listening, setListening] = useState(false);
     const [manualText, setManualText] = useState('');
     const recognitionRef = useRef(null);
 
     useEffect(() => {
-        if (active) setManualText('');
+        if (active) setManualText(initialValue != null ? String(initialValue) : '');
         return () => recognitionRef.current?.stop();
     }, [active]);
 
@@ -276,10 +276,22 @@ const CALC_KEYS = [
 // já escolhida na tela de saldos), a etapa "Conta" é pulada e o lançamento
 // fica preso a essa conta — mesmo padrão do modal "+ Novo Lançamento" do
 // AgilisWeb, aberto a partir da página de uma conta específica.
-export default function EntrySequence({ navigation, account: fixedAccount }) {
+// `prefill`: usado pelo QR Code — { amount, beneficiaryName, description },
+// já extraídos da NFC-e (ou vazios, se a leitura automática falhar). O
+// usuário ainda confere/edita cada campo normalmente, só que já pré-cheio.
+// `onSaved(rows)`: chamado depois de gravar com sucesso em `transactions`
+// (não é chamado em Transferência) — usado pelo QR Code pra também deixar
+// um registro em nfce_imports vinculado ao lançamento real.
+export default function EntrySequence({ navigation, account: fixedAccount, prefill, onSaved }) {
     const { addDraft } = useDrafts();
     const [stepIndex, setStepIndex] = useState(0);
-    const [values, setValues] = useState(() => ({ ...EMPTY_VALUES, account: fixedAccount || null }));
+    const [values, setValues] = useState(() => ({
+        ...EMPTY_VALUES,
+        account: fixedAccount || null,
+        amount: prefill?.amount ?? null,
+        beneficiary: prefill?.beneficiaryName ? { id: null, name: prefill.beneficiaryName } : null,
+        description: prefill?.description || prefill?.beneficiaryName || '',
+    }));
     const [saving, setSaving] = useState(false);
     const [stage, setStage] = useState('form');
     const [photo, setPhoto] = useState(null);
@@ -461,6 +473,8 @@ export default function EntrySequence({ navigation, account: fixedAccount }) {
 
         if (error) {
             Alert.alert('Aviso', 'Não foi possível gravar no banco agora. O item foi salvo no rascunho e será reenviado ao fechar o dia.');
+        } else if (data?.length) {
+            onSaved?.(data);
         }
 
         savedDraftRef.current = addDraft({
@@ -585,6 +599,7 @@ export default function EntrySequence({ navigation, account: fixedAccount }) {
                     label={STEP_LABELS.amount}
                     active={step === 'amount'}
                     onDone={(n) => setValue('amount', n)}
+                    initialValue={values.amount}
                 />
 
                 {step === 'amount' && (
