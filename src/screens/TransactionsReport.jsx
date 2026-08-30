@@ -12,10 +12,16 @@ function fmtDateBR(iso) {
     return `${d}/${m}/${y}`;
 }
 
+function todayISO() {
+    return new Date().toISOString().split('T')[0];
+}
+
 // Relatório de lançamentos da conta selecionada — mesmo padrão visual do
 // seletor de contas da Home: uma linha por lançamento, tocando expande
 // mostrando todos os dados da movimentação (igual ao modal de edição do
 // AgilisWeb, só que inline em vez de modal, por causa do espaço em tela).
+// Só mostra o que foi emitido hoje — não é um extrato histórico, é o
+// acompanhamento do dia (a data já é sempre "hoje", por isso some da linha).
 export default function TransactionsReport({ account }) {
     const [loading, setLoading] = useState(true);
     const [transactions, setTransactions] = useState([]);
@@ -26,7 +32,7 @@ export default function TransactionsReport({ account }) {
     const load = async () => {
         setLoading(true);
         const [{ data: txs }, { data: beneficiaries }, { data: costCenters }, { data: chartAccounts }] = await Promise.all([
-            supabase.from('transactions').select('*').eq('account_id', account.id).order('due_date', { ascending: false }),
+            supabase.from('transactions').select('*').eq('account_id', account.id).eq('emission_date', todayISO()).order('due_date', { ascending: false }),
             supabase.from('beneficiaries').select('id, name'),
             supabase.from('cost_centers').select('id, full_code, description'),
             supabase.from('chart_of_accounts').select('id, code, description'),
@@ -66,7 +72,7 @@ export default function TransactionsReport({ account }) {
             {transactions.length === 0 ? (
                 <TouchableOpacity style={s.emptyState} onPress={load}>
                     <Text style={s.emptyIcon}>📊</Text>
-                    <Text style={s.emptyText}>Nenhum lançamento nesta conta.{'\n'}Toque para tentar novamente.</Text>
+                    <Text style={s.emptyText}>Nenhum lançamento hoje nesta conta.{'\n'}Toque para tentar novamente.</Text>
                 </TouchableOpacity>
             ) : transactions.map(t => {
                 const isCredit = t.dc_type === 'C';
@@ -75,10 +81,7 @@ export default function TransactionsReport({ account }) {
                 return (
                     <View key={t.id} style={s.card}>
                         <TouchableOpacity style={s.row} onPress={() => toggleExpand(t)} activeOpacity={0.7}>
-                            <View style={{ flex: 1 }}>
-                                <Text style={s.rowDesc} numberOfLines={1}>{t.description || maps.beneficiaries[t.beneficiary_id] || 'Sem descrição'}</Text>
-                                <Text style={s.rowDate}>{fmtDateBR(t.due_date)}</Text>
-                            </View>
+                            <Text style={s.rowDesc} numberOfLines={1}>{t.description || maps.beneficiaries[t.beneficiary_id] || 'Sem descrição'}</Text>
                             <Text style={[s.rowAmount, isCredit ? s.credit : s.debit]}>{isCredit ? '+' : '−'} {fmtBRL(t.amount)}</Text>
                             <Text style={s.rowArrow}>{open ? '▾' : '▸'}</Text>
                         </TouchableOpacity>
@@ -118,22 +121,21 @@ function DetailRow({ label, value }) {
 }
 
 const s = StyleSheet.create({
-    list: { flex: 1, paddingHorizontal: 16, paddingTop: 12 },
+    list: { flex: 1, paddingHorizontal: 16, paddingTop: 8 },
     emptyState: { alignItems: 'center', marginTop: 48, opacity: 0.5 },
     emptyIcon: { fontSize: 40, marginBottom: 12 },
     emptyText: { color: '#94a3b8', textAlign: 'center', lineHeight: 22 },
 
-    card: { backgroundColor: '#1e293b', borderRadius: 12, marginBottom: 8, borderWidth: 1, borderColor: '#334155', overflow: 'hidden' },
-    row: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14 },
-    rowDesc: { color: '#fff', fontWeight: '700', fontSize: 13 },
-    rowDate: { color: '#89962F', fontSize: 11, marginTop: 2 },
+    card: { backgroundColor: '#1e293b', borderBottomWidth: 1, borderBottomColor: '#0f172a' },
+    row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, paddingHorizontal: 12 },
+    rowDesc: { flex: 1, color: '#fff', fontWeight: '700', fontSize: 13 },
     rowAmount: { fontWeight: '800', fontSize: 13 },
     credit: { color: '#22c55e' },
     debit: { color: '#ef4444' },
     rowArrow: { color: '#CCFF00', fontSize: 13, width: 14, textAlign: 'center' },
 
-    detail: { borderTopWidth: 1, borderTopColor: '#0f172a', padding: 14, paddingTop: 10 },
-    detailRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: '#0f172a' },
+    detail: { borderTopWidth: 1, borderTopColor: '#0f172a', padding: 12, paddingTop: 6 },
+    detailRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3, borderBottomWidth: 1, borderBottomColor: '#0f172a' },
     detailLabel: { color: '#89962F', fontSize: 11, flexShrink: 0, marginRight: 8 },
     detailValue: { color: '#fff', fontSize: 12, fontWeight: '600', flexShrink: 1, textAlign: 'right' },
 });
