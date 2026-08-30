@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import QRScreen from './QRScreen';
 import VoiceScreen from './VoiceScreen';
 import ManualScreen from './ManualScreen';
+import TransactionsReport from './TransactionsReport';
 
 function fmtBRL(n) {
     return `R$ ${Number(n || 0).toFixed(2).replace('.', ',')}`;
@@ -97,6 +98,7 @@ const TABS = {
     qr: { label: 'QR Code', icon: '📷', style: 'qBtnQR', Component: QRScreen, props: { forcedMode: 'qr' } },
     voice: { label: 'Voz', icon: '🎤', style: 'qBtnVoice', Component: VoiceScreen },
     manual: { label: 'Digitação', icon: '📝', style: 'qBtnManual', Component: ManualScreen },
+    report: { label: 'Lançamentos', icon: '📊', style: 'qBtnReport', Component: TransactionsReport },
 };
 
 export default function HomeScreen({ navigation }) {
@@ -260,6 +262,7 @@ const s = StyleSheet.create({
     qBtnQR: { backgroundColor: '#1e293b', borderColor: '#004d40' },
     qBtnVoice: { backgroundColor: '#1e293b', borderColor: '#89962F' },
     qBtnManual: { backgroundColor: '#1e293b', borderColor: '#334155' },
+    qBtnReport: { backgroundColor: '#1e293b', borderColor: '#1565c0' },
     qIcon: { fontSize: 18, marginBottom: 3 },
     qLabel: { color: '#fff', fontSize: 11, fontWeight: '700', textAlign: 'center', lineHeight: 15 },
 
