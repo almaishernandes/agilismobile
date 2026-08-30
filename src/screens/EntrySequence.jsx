@@ -323,6 +323,11 @@ export default function EntrySequence({ navigation, account: fixedAccount }) {
 
     const handleConfirm = async () => {
         if (!values.account) { Alert.alert('Selecione uma conta.'); return; }
+        if (values.dc_type !== 'T' && ccRemaining !== 0) {
+            Alert.alert('Rateio incompleto', 'O restante a alocar do Centro de Custos precisa ser R$ 0,00.');
+            goToStep('costCenter');
+            return;
+        }
         setSaving(true);
         const ctx = await getSecurityContext();
 
@@ -692,7 +697,13 @@ export default function EntrySequence({ navigation, account: fixedAccount }) {
                                         <TouchableOpacity style={s.btnSecondary} onPress={() => setRateioPickerOpen(true)}>
                                             <Text style={s.btnSecondaryText}>↗ Rateio</Text>
                                         </TouchableOpacity>
-                                        <TouchableOpacity style={s.saveBtn} onPress={advance}>
+                                        <TouchableOpacity
+                                            style={[s.saveBtn, ccRemaining !== 0 && s.saveBtnDisabled]}
+                                            onPress={() => {
+                                                if (ccRemaining !== 0) { Alert.alert('Rateio incompleto', 'O restante a alocar precisa ser R$ 0,00 antes de avançar.'); return; }
+                                                advance();
+                                            }}
+                                        >
                                             <Text style={s.saveBtnText}>Avançar</Text>
                                         </TouchableOpacity>
                                     </View>
@@ -839,6 +850,7 @@ const s = StyleSheet.create({
     btnSecondary: { flex: 1, backgroundColor: '#0f172a', borderRadius: 12, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#334155', justifyContent: 'center' },
     btnSecondaryText: { color: '#fff', fontSize: 14, fontWeight: '700' },
     saveBtn: { flex: 2, backgroundColor: '#CCFF00', borderRadius: 12, padding: 16, alignItems: 'center', justifyContent: 'center' },
+    saveBtnDisabled: { opacity: 0.4 },
 
     installmentPreview: { backgroundColor: '#0f172a', borderRadius: 10, borderWidth: 1, borderColor: '#334155', overflow: 'hidden' },
     installmentRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
