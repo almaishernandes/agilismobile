@@ -71,5 +71,5 @@ export async function insertTransaction(ctx, {
             family_id: ctx?.family_id ?? null,
         });
     }
-    return supabase.from('transactions').insert(rows);
+    return supabase.from('transactions').insert(rows).select('id, amount');
 }

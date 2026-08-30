@@ -18,7 +18,7 @@ export default function AccountPicker({ selected, onSelect }) {
         setLoadError(null);
         const { data, error } = await supabase
             .from('accounts')
-            .select('id, name, account_type')
+            .select('id, name, account_type, closing_day, due_day')
             .order('name');
         if (error) {
             console.error('Erro ao carregar contas:', error);
