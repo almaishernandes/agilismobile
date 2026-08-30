@@ -43,9 +43,13 @@ const isCreditCard = (account) => (account?.account_type || '').toLowerCase().in
 // Transferência é um fluxo curto (Valor → Tipo → Conta → Conta Destino →
 // Conferência); Saída/Entrada seguem o fluxo completo, com Parcelas só
 // aparecendo quando a conta escolhida é Cartão de Crédito.
-function buildSteps(dcType, account) {
-    if (dcType === 'T') return ['amount', 'flowType', 'account', 'destinoAccount', 'review'];
-    const steps = ['amount', 'flowType', 'account'];
+function buildSteps(dcType, account, fixedAccount) {
+    if (dcType === 'T') {
+        return fixedAccount
+            ? ['amount', 'flowType', 'destinoAccount', 'review']
+            : ['amount', 'flowType', 'account', 'destinoAccount', 'review'];
+    }
+    const steps = fixedAccount ? ['amount', 'flowType'] : ['amount', 'flowType', 'account'];
     if (isCreditCard(account)) steps.push('installments');
     steps.push('beneficiary', 'costCenter', 'chartAccount', 'review');
     return steps;
@@ -216,10 +220,14 @@ const CALC_KEYS = [
 ];
 
 // stage: 'form' | 'photoPrompt' | 'done'
-export default function EntrySequence({ navigation, voiceEnabled }) {
+// `account`: quando informado (fluxo iniciado a partir da Home, com a conta
+// já escolhida na tela de saldos), a etapa "Conta" é pulada e o lançamento
+// fica preso a essa conta — mesmo padrão do modal "+ Novo Lançamento" do
+// AgilisWeb, aberto a partir da página de uma conta específica.
+export default function EntrySequence({ navigation, voiceEnabled, account: fixedAccount }) {
     const { addDraft } = useDrafts();
     const [stepIndex, setStepIndex] = useState(0);
-    const [values, setValues] = useState(EMPTY_VALUES);
+    const [values, setValues] = useState(() => ({ ...EMPTY_VALUES, account: fixedAccount || null }));
     const [saving, setSaving] = useState(false);
     const [stage, setStage] = useState('form');
     const [photo, setPhoto] = useState(null);
@@ -232,7 +240,7 @@ export default function EntrySequence({ navigation, voiceEnabled }) {
     const [calcDisplay, setCalcDisplay] = useState('');
     const savedDraftRef = useRef(null);
 
-    const STEPS = buildSteps(values.dc_type, values.account);
+    const STEPS = buildSteps(values.dc_type, values.account, !!fixedAccount);
     const step = STEPS[stepIndex] || STEPS[0];
 
     useEffect(() => {
@@ -310,7 +318,7 @@ export default function EntrySequence({ navigation, voiceEnabled }) {
     };
 
     const resetFlow = () => {
-        setValues(EMPTY_VALUES);
+        setValues({ ...EMPTY_VALUES, account: fixedAccount || null });
         setStepIndex(0);
         setStage('form');
         setPhoto(null);
@@ -487,6 +495,13 @@ export default function EntrySequence({ navigation, voiceEnabled }) {
     return (
         <ScrollView style={s.container} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
             <View style={s.form}>
+                {fixedAccount && (
+                    <View style={s.fixedAccountBanner}>
+                        <Text style={s.fixedAccountLabel}>CONTA</Text>
+                        <Text style={s.fixedAccountName}>{fixedAccount.name}</Text>
+                    </View>
+                )}
+
                 {/* Completed fields shown compact above the active one — escondido
                     na Conferência, que já repete tudo de forma organizada. */}
                 {step !== 'review' && (
@@ -735,14 +750,14 @@ export default function EntrySequence({ navigation, voiceEnabled }) {
                         <DoneRow label="Tipo" value={values.dc_type === 'C' ? 'Entrada' : values.dc_type === 'T' ? 'Transferência' : 'Saída'} onEdit={() => goToStep('flowType')} />
                         {values.dc_type === 'T' ? (
                             <>
-                                <DoneRow label="Conta Origem" value={values.account?.name || '—'} onEdit={() => goToStep('account')} />
+                                <DoneRow label="Conta Origem" value={values.account?.name || '—'} onEdit={fixedAccount ? undefined : () => goToStep('account')} />
                                 <DoneRow label="Conta Destino" value={values.destinoAccount?.name || '—'} onEdit={() => goToStep('destinoAccount')} />
                             </>
                         ) : (
                             <>
                                 <DoneRow label="Parcelas" value={`${values.installments}x`} onEdit={() => { setShowInstallmentDetail(false); goToStep('installments'); }} />
                                 <DoneRow label={values.installments > 1 ? '1º Vencimento' : 'Vencimento'} value={fmtDateBR(values.firstDueDate)} onEdit={() => { setShowInstallmentDetail(true); goToStep('installments'); }} />
-                                <DoneRow label="Conta" value={values.account?.name || '—'} onEdit={() => goToStep('account')} />
+                                <DoneRow label="Conta" value={values.account?.name || '—'} onEdit={fixedAccount ? undefined : () => goToStep('account')} />
                                 <DoneRow label="Fornecedor" value={values.beneficiary?.name || '—'} onEdit={() => goToStep('beneficiary')} />
                                 {values.costCenterItems.length <= 1 ? (
                                     <DoneRow label="Centro de Custos" value={values.costCenterItems[0]?.description || '—'} onEdit={() => goToStep('costCenter')} />
@@ -772,6 +787,10 @@ const s = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#0f172a' },
     content: { paddingBottom: 40, paddingTop: 16 },
     form: { margin: 16, marginTop: 0, backgroundColor: '#1e293b', borderRadius: 16, padding: 20 },
+
+    fixedAccountBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#004d40', borderRadius: 10, padding: 10, marginBottom: 12 },
+    fixedAccountLabel: { color: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: '800', letterSpacing: 1 },
+    fixedAccountName: { color: '#CCFF00', fontSize: 14, fontWeight: '800' },
 
     doneRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#0f172a' },
     doneLabel: { color: '#89962F', fontSize: 12 },

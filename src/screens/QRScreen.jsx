@@ -21,7 +21,7 @@ function extractEmitente(url) {
     } catch { return ''; }
 }
 
-export default function QRScreen({ navigation, forcedMode }) {
+export default function QRScreen({ navigation, forcedMode, account: presetAccount }) {
     const { addDraft } = useDrafts();
     const [permission, requestPermission] = useCameraPermissions();
     const [mode, setMode] = useState(forcedMode || 'qr'); // 'qr' | 'photo'
@@ -30,7 +30,7 @@ export default function QRScreen({ navigation, forcedMode }) {
     const [processing, setProcessing] = useState(false);
     const [nfceData, setNfceData] = useState(null);
     const [photo, setPhoto] = useState(null);
-    const [account, setAccount] = useState(null);
+    const [account, setAccount] = useState(presetAccount || null);
     const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
     const handleBarcode = async ({ data }) => {
