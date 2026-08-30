@@ -194,14 +194,26 @@ function InstallmentsField({ active, onDone }) {
     );
 }
 
-function DoneRow({ label, value }) {
+function DoneRow({ label, value, onEdit }) {
+    const Wrapper = onEdit ? TouchableOpacity : View;
     return (
-        <View style={s.doneRow}>
+        <Wrapper style={s.doneRow} onPress={onEdit} activeOpacity={0.6}>
             <Text style={s.doneLabel}>{label}</Text>
-            <Text style={s.doneValue}>{value}</Text>
-        </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={s.doneValue}>{value}</Text>
+                {onEdit && <Text style={s.doneEditIcon}>✎</Text>}
+            </View>
+        </Wrapper>
     );
 }
+
+const CALC_KEYS = [
+    ['7', '8', '9', '/'],
+    ['4', '5', '6', '*'],
+    ['1', '2', '3', '-'],
+    ['0', ',', '⌫', '+'],
+    ['C', '', '=', ''],
+];
 
 // stage: 'form' | 'photoPrompt' | 'done'
 export default function EntrySequence({ navigation, voiceEnabled }) {
@@ -216,6 +228,8 @@ export default function EntrySequence({ navigation, voiceEnabled }) {
     const [otherAccounts, setOtherAccounts] = useState([]);
     const [costCenters, setCostCenters] = useState([]);
     const [rateioPickerOpen, setRateioPickerOpen] = useState(false);
+    const [calcOpen, setCalcOpen] = useState(false);
+    const [calcDisplay, setCalcDisplay] = useState('');
     const savedDraftRef = useRef(null);
 
     const STEPS = buildSteps(values.dc_type, values.account);
@@ -233,6 +247,10 @@ export default function EntrySequence({ navigation, voiceEnabled }) {
 
     const advance = () => setStepIndex(i => Math.min(i + 1, STEPS.length - 1));
     const goBackStep = () => setStepIndex(i => Math.max(i - 1, 0));
+    const goToStep = (key) => {
+        const idx = STEPS.indexOf(key);
+        if (idx >= 0) setStepIndex(idx);
+    };
 
     // ── Rateio do Centro de Custos (mesmo modelo do AgilisWeb) ──────────────
     const ccAllocated = values.costCenterItems.reduce((sum, it) => sum + Number(it.amount || 0), 0);
@@ -245,8 +263,29 @@ export default function EntrySequence({ navigation, voiceEnabled }) {
         setValues(v => ({ ...v, costCenterItems: [...v.costCenterItems, { ...cc, amount: ccRemaining }] }));
         setRateioPickerOpen(false);
     };
+    const updateCcAmount = (idx, amount) => {
+        setValues(v => ({ ...v, costCenterItems: v.costCenterItems.map((it, i) => i === idx ? { ...it, amount } : it) }));
+    };
     const removeCcItem = (idx) => {
         setValues(v => ({ ...v, costCenterItems: v.costCenterItems.filter((_, i) => i !== idx) }));
+    };
+
+    // ── Calculadora (mesma do AgilisWeb) ────────────────────────────────────
+    const calcPress = (key) => {
+        if (key === 'C') { setCalcDisplay(''); return; }
+        if (key === '⌫') { setCalcDisplay(d => d.slice(0, -1)); return; }
+        if (key === '=') {
+            try {
+                const safeExpr = calcDisplay.replace(/,/g, '.').replace(/[^0-9+\-*/.()]/g, '');
+                // eslint-disable-next-line no-new-func
+                const result = Function('"use strict"; return (' + safeExpr + ')')();
+                const rounded = Math.round(result * 100) / 100;
+                setCalcOpen(false);
+                setValue('amount', rounded);
+            } catch { /* ignora expressão inválida */ }
+            return;
+        }
+        setCalcDisplay(d => d + key);
     };
 
     const setValue = (key, val) => {
@@ -469,6 +508,38 @@ export default function EntrySequence({ navigation, voiceEnabled }) {
                     voiceEnabled={voiceEnabled}
                 />
 
+                {step === 'amount' && (
+                    <View style={s.stepBox}>
+                        <TouchableOpacity
+                            style={s.calcToggleBtn}
+                            onPress={() => { setCalcDisplay(''); setCalcOpen(o => !o); }}
+                        >
+                            <Text style={s.calcToggleBtnText}>🧮 {calcOpen ? 'Fechar calculadora' : 'Usar calculadora'}</Text>
+                        </TouchableOpacity>
+
+                        {calcOpen && (
+                            <View style={s.calcBox}>
+                                <Text style={s.calcDisplay}>{calcDisplay || '0'}</Text>
+                                {CALC_KEYS.map((row, ri) => (
+                                    <View key={ri} style={s.calcRow}>
+                                        {row.map((k, ki) => k === '' ? (
+                                            <View key={ki} style={{ flex: 1 }} />
+                                        ) : (
+                                            <TouchableOpacity
+                                                key={ki}
+                                                style={[s.calcKey, k === '=' && s.calcKeyEquals, k === 'C' && s.calcKeyClear]}
+                                                onPress={() => calcPress(k)}
+                                            >
+                                                <Text style={[s.calcKeyText, k === '=' && s.calcKeyEqualsText]}>{k === '=' ? '✓' : k}</Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                ))}
+                            </View>
+                        )}
+                    </View>
+                )}
+
                 {step === 'flowType' && (
                     <View style={s.stepBox}>
                         <Text style={s.stepLabel}>{STEP_LABELS.flowType}</Text>
@@ -590,7 +661,12 @@ export default function EntrySequence({ navigation, voiceEnabled }) {
                                 {values.costCenterItems.map((it, idx) => (
                                     <View key={idx} style={s.ccRow}>
                                         <Text style={s.ccRowLabel}>{it.full_code ? `${it.full_code} - ` : ''}{it.description}</Text>
-                                        <Text style={s.ccRowAmount}>{fmtBRL(it.amount)}</Text>
+                                        <TextInput
+                                            style={s.ccAmountInput}
+                                            value={String(it.amount)}
+                                            onChangeText={(txt) => updateCcAmount(idx, txt.replace(',', '.'))}
+                                            keyboardType="decimal-pad"
+                                        />
                                         {values.costCenterItems.length > 1 && (
                                             <TouchableOpacity onPress={() => removeCcItem(idx)}>
                                                 <Text style={s.ccRemove}>✕</Text>
@@ -653,27 +729,27 @@ export default function EntrySequence({ navigation, voiceEnabled }) {
 
                 {step === 'review' && (
                     <View style={s.stepBox}>
-                        <Text style={s.stepLabel}>Conferência</Text>
+                        <Text style={s.stepLabel}>Conferência (toque num campo para editar)</Text>
                         <DoneRow label="Data" value={fmtDateBR(todayISO())} />
-                        <DoneRow label="Valor" value={fmtBRL(values.amount)} />
-                        <DoneRow label="Tipo" value={values.dc_type === 'C' ? 'Entrada' : values.dc_type === 'T' ? 'Transferência' : 'Saída'} />
+                        <DoneRow label="Valor" value={fmtBRL(values.amount)} onEdit={() => goToStep('amount')} />
+                        <DoneRow label="Tipo" value={values.dc_type === 'C' ? 'Entrada' : values.dc_type === 'T' ? 'Transferência' : 'Saída'} onEdit={() => goToStep('flowType')} />
                         {values.dc_type === 'T' ? (
                             <>
-                                <DoneRow label="Conta Origem" value={values.account?.name || '—'} />
-                                <DoneRow label="Conta Destino" value={values.destinoAccount?.name || '—'} />
+                                <DoneRow label="Conta Origem" value={values.account?.name || '—'} onEdit={() => goToStep('account')} />
+                                <DoneRow label="Conta Destino" value={values.destinoAccount?.name || '—'} onEdit={() => goToStep('destinoAccount')} />
                             </>
                         ) : (
                             <>
-                                <DoneRow label="Parcelas" value={`${values.installments}x`} />
-                                <DoneRow label={values.installments > 1 ? '1º Vencimento' : 'Vencimento'} value={fmtDateBR(values.firstDueDate)} />
-                                <DoneRow label="Conta" value={values.account?.name || '—'} />
-                                <DoneRow label="Fornecedor" value={values.beneficiary?.name || '—'} />
+                                <DoneRow label="Parcelas" value={`${values.installments}x`} onEdit={() => { setShowInstallmentDetail(false); goToStep('installments'); }} />
+                                <DoneRow label={values.installments > 1 ? '1º Vencimento' : 'Vencimento'} value={fmtDateBR(values.firstDueDate)} onEdit={() => { setShowInstallmentDetail(true); goToStep('installments'); }} />
+                                <DoneRow label="Conta" value={values.account?.name || '—'} onEdit={() => goToStep('account')} />
+                                <DoneRow label="Fornecedor" value={values.beneficiary?.name || '—'} onEdit={() => goToStep('beneficiary')} />
                                 {values.costCenterItems.length <= 1 ? (
-                                    <DoneRow label="Centro de Custos" value={values.costCenterItems[0]?.description || '—'} />
+                                    <DoneRow label="Centro de Custos" value={values.costCenterItems[0]?.description || '—'} onEdit={() => goToStep('costCenter')} />
                                 ) : values.costCenterItems.map((it, idx) => (
-                                    <DoneRow key={idx} label={`↳ ${it.description}`} value={fmtBRL(it.amount)} />
+                                    <DoneRow key={idx} label={`↳ ${it.description}`} value={fmtBRL(it.amount)} onEdit={() => goToStep('costCenter')} />
                                 ))}
-                                <DoneRow label="Plano de Contas" value={values.chartAccount?.description || '—'} />
+                                <DoneRow label="Plano de Contas" value={values.chartAccount?.description || '—'} onEdit={() => goToStep('chartAccount')} />
                             </>
                         )}
 
@@ -700,6 +776,19 @@ const s = StyleSheet.create({
     doneRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#0f172a' },
     doneLabel: { color: '#89962F', fontSize: 12 },
     doneValue: { color: '#fff', fontSize: 13, fontWeight: '700' },
+    doneEditIcon: { color: '#64b5f6', fontSize: 12 },
+
+    calcToggleBtn: { backgroundColor: '#004d40', borderRadius: 10, paddingVertical: 10, alignItems: 'center', marginTop: 8 },
+    calcToggleBtnText: { color: '#CCFF00', fontWeight: '700', fontSize: 13 },
+    calcBox: { marginTop: 8, backgroundColor: '#1e293b', borderRadius: 10, padding: 10, borderWidth: 1, borderColor: '#334155' },
+    calcDisplay: { backgroundColor: '#0f172a', borderRadius: 6, padding: 10, marginBottom: 8, textAlign: 'right', fontSize: 20, fontWeight: '800', color: '#f1f5f9', letterSpacing: 1 },
+    calcRow: { flexDirection: 'row', gap: 6, marginBottom: 6 },
+    calcKey: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center', backgroundColor: '#334155' },
+    calcKeyEquals: { backgroundColor: '#16a34a', flex: 2 },
+    calcKeyClear: { backgroundColor: '#475569' },
+    calcKeyText: { color: '#f1f5f9', fontWeight: '700', fontSize: 15 },
+    calcKeyEqualsText: { color: '#fff' },
+    ccAmountInput: { backgroundColor: '#0f172a', color: '#00e5c0', fontWeight: '700', fontSize: 13, borderRadius: 6, borderWidth: 1, borderColor: '#334155', paddingHorizontal: 8, paddingVertical: 6, minWidth: 80, textAlign: 'right' },
 
     stepBox: { marginTop: 8 },
     stepLabel: { color: '#89962F', fontSize: 11, letterSpacing: 1, marginBottom: 6 },
