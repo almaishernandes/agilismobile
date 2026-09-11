@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import QRScreen from './QRScreen';
 import ManualScreen from './ManualScreen';
 import TransactionsReport from './TransactionsReport';
+import AccountStatement from './AccountStatement';
 
 function fmtBRL(n) {
     return `R$ ${Number(n || 0).toFixed(2).replace('.', ',')}`;
@@ -106,6 +107,7 @@ const TABS = {
     qr: { label: 'QR Code', icon: '📷', style: 'qBtnQR', Component: QRScreen, props: { forcedMode: 'qr' } },
     manual: { label: 'Digitação', icon: '📝', style: 'qBtnManual', Component: ManualScreen },
     report: { label: 'Lançamentos', icon: '📊', style: 'qBtnReport', Component: TransactionsReport },
+    statement: { label: 'Extrato', icon: '🏦', style: 'qBtnStatement', Component: AccountStatement },
 };
 
 function isToday(iso) {
@@ -290,14 +292,15 @@ const s = StyleSheet.create({
     selectedAccountName: { color: '#CCFF00', fontSize: 15, fontWeight: '800', marginTop: 2 },
     selectedAccountChange: { color: '#fff', fontSize: 12 },
 
-    quickBtns: { flexDirection: 'row', padding: 12, gap: 8 },
-    qBtn: { flex: 1, borderRadius: 12, padding: 10, alignItems: 'center', justifyContent: 'center', minHeight: 60, borderWidth: 1 },
+    quickBtns: { flexDirection: 'row', paddingHorizontal: 10, paddingVertical: 10, gap: 6 },
+    qBtn: { flex: 1, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 2, alignItems: 'center', justifyContent: 'center', minHeight: 54, borderWidth: 1 },
     qBtnActive: { borderColor: '#CCFF00', borderWidth: 2, backgroundColor: '#263a1e' },
     qBtnQR: { backgroundColor: '#1e293b', borderColor: '#004d40' },
     qBtnManual: { backgroundColor: '#1e293b', borderColor: '#334155' },
     qBtnReport: { backgroundColor: '#1e293b', borderColor: '#1565c0' },
-    qIcon: { fontSize: 18, marginBottom: 3 },
-    qLabel: { color: '#fff', fontSize: 11, fontWeight: '700', textAlign: 'center', lineHeight: 15 },
+    qBtnStatement: { backgroundColor: '#1e293b', borderColor: '#89962F' },
+    qIcon: { fontSize: 16, marginBottom: 2 },
+    qLabel: { color: '#fff', fontSize: 9.5, fontWeight: '700', textAlign: 'center', lineHeight: 12 },
 
     summaryCard: { marginHorizontal: 16, backgroundColor: '#004d40', borderRadius: 14, padding: 18, marginBottom: 4 },
     summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
