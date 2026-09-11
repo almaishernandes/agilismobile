@@ -5,7 +5,6 @@ import { signOut } from '../lib/auth';
 import { supabase } from '../lib/supabase';
 import QRScreen from './QRScreen';
 import ManualScreen from './ManualScreen';
-import TransactionsReport from './TransactionsReport';
 import AccountStatement from './AccountStatement';
 
 function fmtBRL(n) {
@@ -105,9 +104,9 @@ function AccountGroupPicker({ onSelectAccount }) {
 // oferecido logo após gravar o lançamento, em qualquer uma das 3 abas.
 const TABS = {
     qr: { label: 'QR Code', icon: '📷', style: 'qBtnQR', Component: QRScreen, props: { forcedMode: 'qr' } },
-    manual: { label: 'Digitação', icon: '📝', style: 'qBtnManual', Component: ManualScreen },
-    report: { label: 'Lançamentos', icon: '📊', style: 'qBtnReport', Component: TransactionsReport },
-    statement: { label: 'Extrato', icon: '🏦', style: 'qBtnStatement', Component: AccountStatement },
+    manual: { label: 'Lançamentos', icon: '📝', style: 'qBtnManual', Component: ManualScreen },
+    report: { label: 'Diário', icon: '📊', style: 'qBtnReport', Component: AccountStatement, props: { granularity: 'day' } },
+    statement: { label: 'Mensal', icon: '🏦', style: 'qBtnStatement', Component: AccountStatement, props: { granularity: 'month' } },
 };
 
 function isToday(iso) {

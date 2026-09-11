@@ -24,7 +24,7 @@ const isCreditCard = (acc) => (acc?.account_type || '').toLowerCase().includes('
 // (cartão de crédito) — mesma lógica de cálculo usada no AgilisWeb
 // (Transactions.jsx: fetchTransactions + ExtratoModal), só que lendo tudo
 // de uma vez (a conta não costuma ter volume grande o bastante pra paginar).
-export default function AccountStatement({ account, navigation }) {
+export default function AccountStatement({ account, navigation, granularity = 'month' }) {
     const [loading, setLoading] = useState(true);
     const [accountFull, setAccountFull] = useState(account);
     const [transactions, setTransactions] = useState([]);
@@ -65,7 +65,7 @@ export default function AccountStatement({ account, navigation }) {
 
     return creditCard
         ? <InvoiceStatement account={accountFull} transactions={transactions} maps={maps} />
-        : <AccountLedger account={accountFull} transactions={transactions} maps={maps} />;
+        : <AccountLedger account={accountFull} transactions={transactions} maps={maps} granularity={granularity} />;
 }
 
 // ── Extrato de Fatura (Cartão de Crédito) ───────────────────────────────────
@@ -180,13 +180,18 @@ function InvoiceStatement({ account, transactions, maps }) {
 }
 
 // ── Extrato bancário (Conta Corrente e demais tipos) ───────────────────────
-function AccountLedger({ account, transactions, maps }) {
+// `granularity`: 'month' (extrato Mensal, navega mês a mês) ou 'day'
+// (extrato Diário, navega dia a dia) — mesma lógica de saldo/lista, só muda
+// o tamanho do período mostrado.
+function AccountLedger({ account, transactions, maps, granularity = 'month' }) {
+    const isDaily = granularity === 'day';
     const [periodMonth, setPeriodMonth] = useState(() => todayISO().slice(0, 7)); // 'YYYY-MM'
+    const [periodDay, setPeriodDay] = useState(() => todayISO()); // 'YYYY-MM-DD'
 
     const [year, month] = periodMonth.split('-').map(Number);
-    const periodStart = `${periodMonth}-01`;
+    const periodStart = isDaily ? periodDay : `${periodMonth}-01`;
     const periodEndDate = new Date(year, month, 0).getDate();
-    const periodEnd = `${periodMonth}-${String(periodEndDate).padStart(2, '0')}`;
+    const periodEnd = isDaily ? periodDay : `${periodMonth}-${String(periodEndDate).padStart(2, '0')}`;
 
     const saldoAnterior = useMemo(() => {
         let saldo = Number(account?.initial_balance || 0);
@@ -218,15 +223,22 @@ function AccountLedger({ account, transactions, maps }) {
         const d = new Date(year, month - 1 + delta, 1);
         setPeriodMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
     };
+    const shiftDay = (delta) => {
+        const d = new Date(`${periodDay}T12:00:00`);
+        d.setDate(d.getDate() + delta);
+        setPeriodDay(d.toISOString().split('T')[0]);
+    };
+    const shiftPeriod = isDaily ? shiftDay : shiftMonth;
+    const periodLabel = isDaily ? fmtDateBR(periodDay) : `${MONTH_NAMES[month - 1]} / ${year}`;
 
     return (
         <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 40 }}>
             <View style={s.monthNavRow}>
-                <TouchableOpacity style={s.monthNavBtn} onPress={() => shiftMonth(-1)}>
+                <TouchableOpacity style={s.monthNavBtn} onPress={() => shiftPeriod(-1)}>
                     <Text style={s.monthNavBtnText}>‹</Text>
                 </TouchableOpacity>
-                <Text style={s.monthNavLabel}>{MONTH_NAMES[month - 1]} / {year}</Text>
-                <TouchableOpacity style={s.monthNavBtn} onPress={() => shiftMonth(1)}>
+                <Text style={s.monthNavLabel}>{periodLabel}</Text>
+                <TouchableOpacity style={s.monthNavBtn} onPress={() => shiftPeriod(1)}>
                     <Text style={s.monthNavBtnText}>›</Text>
                 </TouchableOpacity>
             </View>
