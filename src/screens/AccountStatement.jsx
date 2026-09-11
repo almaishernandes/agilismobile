@@ -253,6 +253,7 @@ function AccountLedger({ account, transactions, maps, granularity = 'month' }) {
                     <Text style={s.emptyText}>Nenhum lançamento neste período.</Text>
                 ) : rows.map(t => (
                     <View key={t.id} style={s.txRowSingle}>
+                        {!isDaily && <Text style={s.txDay}>{t.emission_date?.slice(8, 10) || '—'}</Text>}
                         <Text style={s.txDesc} numberOfLines={1}>{t.description || maps.beneficiaries[t.beneficiary_id] || 'Sem descrição'}</Text>
                         <Text style={[s.txAmount, t.dc_type === 'C' ? s.credit : s.debit]}>{t.dc_type === 'C' ? '+' : '−'} {fmtBRL(t.amount)}</Text>
                     </View>
@@ -325,6 +326,7 @@ const s = StyleSheet.create({
     txList: { marginTop: 2 },
     txRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: '#0f172a' },
     txRowSingle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#0f172a' },
+    txDay: { color: '#64748b', fontWeight: '700', fontSize: 12, width: 20 },
     txDesc: { flex: 1, color: '#fff', fontWeight: '700', fontSize: 13 },
     txDate: { color: '#64748b', fontSize: 11, marginTop: 2 },
     txAmount: { fontWeight: '800', fontSize: 13 },
