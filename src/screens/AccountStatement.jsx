@@ -230,6 +230,11 @@ function AccountLedger({ account, transactions, maps, granularity = 'month' }) {
     };
     const shiftPeriod = isDaily ? shiftDay : shiftMonth;
     const periodLabel = isDaily ? fmtDateBR(periodDay) : `${MONTH_NAMES[month - 1]} / ${year}`;
+    const goToToday = () => {
+        setPeriodMonth(todayISO().slice(0, 7));
+        setPeriodDay(todayISO());
+    };
+    const isCurrentPeriod = isDaily ? periodDay === todayISO() : periodMonth === todayISO().slice(0, 7);
 
     return (
         <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 40 }}>
@@ -240,6 +245,13 @@ function AccountLedger({ account, transactions, maps, granularity = 'month' }) {
                 <Text style={s.monthNavLabel}>{periodLabel}</Text>
                 <TouchableOpacity style={s.monthNavBtn} onPress={() => shiftPeriod(1)}>
                     <Text style={s.monthNavBtnText}>›</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[s.todayBtn, isCurrentPeriod && s.todayBtnDisabled]}
+                    onPress={goToToday}
+                    disabled={isCurrentPeriod}
+                >
+                    <Text style={s.todayBtnText}>Hoje</Text>
                 </TouchableOpacity>
             </View>
 
@@ -309,10 +321,13 @@ const s = StyleSheet.create({
     monthTabTotal: { color: '#fff', fontSize: 10, marginTop: 3 },
     monthTabTotalActive: { color: '#fff', fontWeight: '700' },
 
-    monthNavRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 20, marginTop: 4 },
+    monthNavRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 14, marginTop: 4 },
     monthNavBtn: { backgroundColor: '#1e293b', borderRadius: 8, borderWidth: 1, borderColor: '#334155', paddingHorizontal: 14, paddingVertical: 6 },
     monthNavBtnText: { color: '#CCFF00', fontSize: 18, fontWeight: '800' },
-    monthNavLabel: { color: '#fff', fontSize: 15, fontWeight: '800', minWidth: 110, textAlign: 'center' },
+    monthNavLabel: { color: '#fff', fontSize: 15, fontWeight: '800', minWidth: 100, textAlign: 'center' },
+    todayBtn: { backgroundColor: '#004d40', borderRadius: 8, borderWidth: 1, borderColor: '#89962F', paddingHorizontal: 12, paddingVertical: 7 },
+    todayBtnDisabled: { opacity: 0.35 },
+    todayBtnText: { color: '#CCFF00', fontSize: 12, fontWeight: '800' },
 
     ledgerSummary: { flexDirection: 'row', backgroundColor: '#1e293b', borderRadius: 12, padding: 14, marginTop: 14, borderWidth: 1, borderColor: '#334155' },
     summaryLabel: { color: '#64748b', fontSize: 10, fontWeight: '700' },
