@@ -36,7 +36,10 @@ export default function AppNavigator() {
     return (
         <DraftProvider>
             <NavigationContainer theme={NAV_THEME}>
-                <Stack.Navigator screenOptions={{ headerShown: false, animationEnabled: true }}>
+                {/* gestureEnabled: false — o gesto de "arrastar da borda pra voltar" do
+                    stack navigator, em alguns celulares Android, disputa com o
+                    ScrollView das telas (ex: Extrato) e trava a rolagem por toque. */}
+                <Stack.Navigator screenOptions={{ headerShown: false, animationEnabled: true, gestureEnabled: false }}>
                     {!session ? (
                         <Stack.Screen name="Login" component={LoginScreen} />
                     ) : (
