@@ -109,8 +109,6 @@ function InvoiceStatement({ account, transactions, maps }) {
     return (
         <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 40 }}>
             <View style={s.invoiceHeader}>
-                <Text style={s.invoiceTitle}>EXTRATO — CARTÃO DE CRÉDITO</Text>
-                <Text style={s.invoiceAccName}>{account.name}</Text>
                 <View style={s.invoiceStatsRow}>
                     <View style={s.invoiceStat}>
                         <Text style={s.invoiceStatLabel}>LIMITE TOTAL</Text>
@@ -170,11 +168,8 @@ function InvoiceStatement({ account, transactions, maps }) {
                     {monthTxs.length === 0 ? (
                         <Text style={s.emptyText}>Nenhum lançamento nesta fatura.</Text>
                     ) : monthTxs.map(t => (
-                        <View key={t.id} style={s.txRow}>
-                            <View style={{ flex: 1 }}>
-                                <Text style={s.txDesc} numberOfLines={1}>{t.description || maps.beneficiaries[t.beneficiary_id] || 'Sem descrição'}</Text>
-                                <Text style={s.txDate}>{fmtDateBR(t.emission_date)} → venc. {fmtDateBR(t.due_date)}</Text>
-                            </View>
+                        <View key={t.id} style={s.txRowSingle}>
+                            <Text style={s.txDesc} numberOfLines={1}>{t.description || maps.beneficiaries[t.beneficiary_id] || 'Sem descrição'}</Text>
                             <Text style={[s.txAmount, t.dc_type === 'C' ? s.credit : s.debit]}>{t.dc_type === 'C' ? '+' : '−'} {fmtBRL(t.amount)}</Text>
                         </View>
                     ))}
@@ -226,11 +221,6 @@ function AccountLedger({ account, transactions, maps }) {
 
     return (
         <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 40 }}>
-            <View style={s.invoiceHeader}>
-                <Text style={s.invoiceTitle}>RELATÓRIO DE LANÇAMENTOS</Text>
-                <Text style={s.invoiceAccName}>{account.name}</Text>
-            </View>
-
             <View style={s.monthNavRow}>
                 <TouchableOpacity style={s.monthNavBtn} onPress={() => shiftMonth(-1)}>
                     <Text style={s.monthNavBtnText}>‹</Text>
@@ -239,12 +229,6 @@ function AccountLedger({ account, transactions, maps }) {
                 <TouchableOpacity style={s.monthNavBtn} onPress={() => shiftMonth(1)}>
                     <Text style={s.monthNavBtnText}>›</Text>
                 </TouchableOpacity>
-            </View>
-
-            <View style={s.ledgerSummary}>
-                <SummaryItem label="Lançamentos" value={String(periodTxs.length)} />
-                <SummaryItem label="Saídas" value={fmtBRL(totalSaidas)} color="#ef4444" />
-                <SummaryItem label="Entradas" value={fmtBRL(totalEntradas)} color="#22c55e" />
             </View>
 
             <View style={s.saldoAntRow}>
@@ -256,11 +240,8 @@ function AccountLedger({ account, transactions, maps }) {
                 {rows.length === 0 ? (
                     <Text style={s.emptyText}>Nenhum lançamento neste período.</Text>
                 ) : rows.map(t => (
-                    <View key={t.id} style={s.txRow}>
-                        <View style={{ flex: 1 }}>
-                            <Text style={s.txDesc} numberOfLines={1}>{t.description || maps.beneficiaries[t.beneficiary_id] || 'Sem descrição'}</Text>
-                            <Text style={s.txDate}>{fmtDateBR(t.emission_date)} · saldo {fmtBRL(t.saldo)}</Text>
-                        </View>
+                    <View key={t.id} style={s.txRowSingle}>
+                        <Text style={s.txDesc} numberOfLines={1}>{t.description || maps.beneficiaries[t.beneficiary_id] || 'Sem descrição'}</Text>
                         <Text style={[s.txAmount, t.dc_type === 'C' ? s.credit : s.debit]}>{t.dc_type === 'C' ? '+' : '−'} {fmtBRL(t.amount)}</Text>
                     </View>
                 ))}
@@ -269,6 +250,12 @@ function AccountLedger({ account, transactions, maps }) {
             <View style={s.saldoAntRow}>
                 <Text style={s.saldoAntLabel}>Saldo Final</Text>
                 <Text style={[s.saldoAntValue, saldoFinal < 0 && s.negative]}>{fmtBRL(saldoFinal)}</Text>
+            </View>
+
+            <View style={s.ledgerSummary}>
+                <SummaryItem label="Saídas" value={fmtBRL(totalSaidas)} color="#ef4444" />
+                <SummaryItem label="Entradas" value={fmtBRL(totalEntradas)} color="#22c55e" />
+                <SummaryItem label="Lançamentos" value={String(periodTxs.length)} />
             </View>
         </ScrollView>
     );
@@ -288,8 +275,6 @@ const s = StyleSheet.create({
     emptyText: { color: '#475569', textAlign: 'center', padding: 24, fontSize: 13 },
 
     invoiceHeader: { backgroundColor: '#1e293b', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: '#334155' },
-    invoiceTitle: { color: '#89962F', fontSize: 10, fontWeight: '800', letterSpacing: 1 },
-    invoiceAccName: { color: '#fff', fontSize: 17, fontWeight: '800', marginTop: 4, marginBottom: 12 },
     invoiceStatsRow: { flexDirection: 'row', gap: 8 },
     invoiceStat: { flex: 1 },
     invoiceStatLabel: { color: '#64748b', fontSize: 9, fontWeight: '700', letterSpacing: 0.5 },
@@ -311,7 +296,7 @@ const s = StyleSheet.create({
     monthTabTotal: { color: '#fff', fontSize: 10, marginTop: 3 },
     monthTabTotalActive: { color: '#fff', fontWeight: '700' },
 
-    monthNavRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 20, marginTop: 14 },
+    monthNavRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 20, marginTop: 4 },
     monthNavBtn: { backgroundColor: '#1e293b', borderRadius: 8, borderWidth: 1, borderColor: '#334155', paddingHorizontal: 14, paddingVertical: 6 },
     monthNavBtnText: { color: '#CCFF00', fontSize: 18, fontWeight: '800' },
     monthNavLabel: { color: '#fff', fontSize: 15, fontWeight: '800', minWidth: 110, textAlign: 'center' },
@@ -325,9 +310,10 @@ const s = StyleSheet.create({
     saldoAntValue: { color: '#22c55e', fontSize: 14, fontWeight: '800' },
     negative: { color: '#ef4444' },
 
-    txList: { marginTop: 4 },
+    txList: { marginTop: 2 },
     txRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: '#0f172a' },
-    txDesc: { color: '#fff', fontWeight: '700', fontSize: 13 },
+    txRowSingle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#0f172a' },
+    txDesc: { flex: 1, color: '#fff', fontWeight: '700', fontSize: 13 },
     txDate: { color: '#64748b', fontSize: 11, marginTop: 2 },
     txAmount: { fontWeight: '800', fontSize: 13 },
     credit: { color: '#22c55e' },
