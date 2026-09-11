@@ -251,7 +251,7 @@ function AccountLedger({ account, transactions, maps, granularity = 'month' }) {
                     onPress={goToToday}
                     disabled={isCurrentPeriod}
                 >
-                    <Text style={s.todayBtnText}>Hoje</Text>
+                    <Text style={s.todayBtnText}>{isDaily ? 'Hoje' : 'Mês Atual'}</Text>
                 </TouchableOpacity>
             </View>
 

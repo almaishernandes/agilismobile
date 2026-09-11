@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import QRScreen from './QRScreen';
 import ManualScreen from './ManualScreen';
 import AccountStatement from './AccountStatement';
+import ReportsScreen from './ReportsScreen';
 
 function fmtBRL(n) {
     return `R$ ${Number(n || 0).toFixed(2).replace('.', ',')}`;
@@ -118,6 +119,7 @@ function isToday(iso) {
 
 export default function HomeScreen({ navigation }) {
     const { drafts: allDrafts, removeDraft } = useDrafts();
+    const [section, setSection] = useState('lancamentos'); // 'lancamentos' | 'relatorios'
     const [activeTab, setActiveTab] = useState(null);
     const [selectedAccount, setSelectedAccount] = useState(null);
     const [expandedDraftId, setExpandedDraftId] = useState(null);
@@ -152,7 +154,10 @@ export default function HomeScreen({ navigation }) {
                 </TouchableOpacity>
             </View>
 
-            {!selectedAccount ? (
+            <View style={s.sectionBody}>
+            {section === 'relatorios' ? (
+                <ReportsScreen />
+            ) : !selectedAccount ? (
                 <AccountGroupPicker onSelectAccount={setSelectedAccount} />
             ) : (
                 <>
@@ -162,10 +167,7 @@ export default function HomeScreen({ navigation }) {
                         onPress={() => { setSelectedAccount(null); setActiveTab(null); }}
                         activeOpacity={0.7}
                     >
-                        <View>
-                            <Text style={s.selectedAccountLabel}>CONTA SELECIONADA</Text>
-                            <Text style={s.selectedAccountName}>{selectedAccount.name}</Text>
-                        </View>
+                        <Text style={s.selectedAccountName}>{selectedAccount.name}</Text>
                         <Text style={s.selectedAccountChange}>Trocar ›</Text>
                     </TouchableOpacity>
 
@@ -264,6 +266,26 @@ export default function HomeScreen({ navigation }) {
                     )}
                 </>
             )}
+            </View>
+
+            {/* Rodapé fixo: Lançamentos (fluxo de entrada por conta) e
+                Relatórios (Equilíbrio/Análise Financeira, sem conta fixa) */}
+            <View style={s.bottomNav}>
+                <TouchableOpacity
+                    style={[s.bottomNavBtn, section === 'lancamentos' && s.bottomNavBtnActive]}
+                    onPress={() => setSection('lancamentos')}
+                >
+                    <Text style={s.bottomNavIcon}>📝</Text>
+                    <Text style={[s.bottomNavLabel, section === 'lancamentos' && s.bottomNavLabelActive]}>Lançamentos</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[s.bottomNavBtn, section === 'relatorios' && s.bottomNavBtnActive]}
+                    onPress={() => setSection('relatorios')}
+                >
+                    <Text style={s.bottomNavIcon}>📈</Text>
+                    <Text style={[s.bottomNavLabel, section === 'relatorios' && s.bottomNavLabelActive]}>Relatórios</Text>
+                </TouchableOpacity>
+            </View>
         </View>
     );
 }
@@ -273,7 +295,15 @@ const s = StyleSheet.create({
     // o Extrato) conseguir rolar de verdade em vez de só transbordar/cortar
     // no fim da tela — bug clássico de flexbox aninhado no React Native Web.
     container: { flex: 1, minHeight: 0, backgroundColor: '#0f172a' },
+    sectionBody: { flex: 1, minHeight: 0 },
     activeArea: { flex: 1, minHeight: 0 },
+
+    bottomNav: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#1e293b', backgroundColor: '#0f172a' },
+    bottomNavBtn: { flex: 1, alignItems: 'center', paddingVertical: 10, gap: 2 },
+    bottomNavBtnActive: { borderTopWidth: 2, borderTopColor: '#CCFF00', marginTop: -1 },
+    bottomNavIcon: { fontSize: 18 },
+    bottomNavLabel: { color: '#64748b', fontSize: 11, fontWeight: '700' },
+    bottomNavLabelActive: { color: '#CCFF00' },
     header: { backgroundColor: '#004d40', paddingHorizontal: 20, paddingVertical: 14, paddingTop: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     logo: { color: '#CCFF00', fontSize: 18, fontWeight: '900', letterSpacing: 1 },
     headerSub: { color: 'rgba(255,255,255,0.6)', fontSize: 11, marginTop: 4 },
@@ -330,7 +360,7 @@ const s = StyleSheet.create({
     draftDetailLabel: { color: '#89962F', fontSize: 11, flexShrink: 0, marginRight: 8 },
     draftDetailValue: { color: '#fff', fontSize: 12, fontWeight: '600', flexShrink: 1, textAlign: 'right' },
 
-    footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16, backgroundColor: '#0f172a', borderTopWidth: 1, borderTopColor: '#1e293b' },
+    footer: { padding: 16, backgroundColor: '#0f172a', borderTopWidth: 1, borderTopColor: '#1e293b' },
     closeBtn: { backgroundColor: '#CCFF00', borderRadius: 14, padding: 18, alignItems: 'center' },
     closeBtnDisabled: { opacity: 0.3 },
     closeBtnText: { color: '#0f172a', fontWeight: '900', fontSize: 15 },
