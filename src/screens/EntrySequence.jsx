@@ -877,7 +877,7 @@ export default function EntrySequence({ navigation, account: fixedAccount, prefi
 }
 
 const s = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#0f172a' },
+    container: { flex: 1, minHeight: 0, backgroundColor: '#0f172a' },
     content: { paddingBottom: 40, paddingTop: 16 },
     form: { margin: 16, marginTop: 0, backgroundColor: '#1e293b', borderRadius: 16, padding: 20 },
 

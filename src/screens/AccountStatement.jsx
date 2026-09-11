@@ -271,7 +271,7 @@ function SummaryItem({ label, value, color = '#fff' }) {
 }
 
 const s = StyleSheet.create({
-    container: { flex: 1, paddingHorizontal: 16, paddingTop: 12 },
+    container: { flex: 1, minHeight: 0, paddingHorizontal: 16, paddingTop: 12 },
     emptyText: { color: '#475569', textAlign: 'center', padding: 24, fontSize: 13 },
 
     invoiceHeader: { backgroundColor: '#1e293b', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: '#334155' },

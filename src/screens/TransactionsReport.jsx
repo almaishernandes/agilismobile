@@ -121,7 +121,7 @@ function DetailRow({ label, value }) {
 }
 
 const s = StyleSheet.create({
-    list: { flex: 1, paddingHorizontal: 16, paddingTop: 8 },
+    list: { flex: 1, minHeight: 0, paddingHorizontal: 16, paddingTop: 8 },
     emptyState: { alignItems: 'center', marginTop: 48, opacity: 0.5 },
     emptyIcon: { fontSize: 40, marginBottom: 12 },
     emptyText: { color: '#94a3b8', textAlign: 'center', lineHeight: 22 },

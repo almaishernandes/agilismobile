@@ -186,7 +186,9 @@ export default function HomeScreen({ navigation }) {
                     </View>
 
                     {ActiveComponent ? (
-                        <ActiveComponent navigation={{ goBack: () => setActiveTab(null) }} account={selectedAccount} {...activeProps} />
+                        <View style={s.activeArea}>
+                            <ActiveComponent navigation={{ goBack: () => setActiveTab(null) }} account={selectedAccount} {...activeProps} />
+                        </View>
                     ) : (
                         <>
                             {/* Draft summary card */}
@@ -268,7 +270,11 @@ export default function HomeScreen({ navigation }) {
 }
 
 const s = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#0f172a' },
+    // minHeight: 0 é o que faz um ScrollView dentro de uma coluna flex (como
+    // o Extrato) conseguir rolar de verdade em vez de só transbordar/cortar
+    // no fim da tela — bug clássico de flexbox aninhado no React Native Web.
+    container: { flex: 1, minHeight: 0, backgroundColor: '#0f172a' },
+    activeArea: { flex: 1, minHeight: 0 },
     header: { backgroundColor: '#004d40', paddingHorizontal: 20, paddingVertical: 14, paddingTop: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     logo: { color: '#CCFF00', fontSize: 18, fontWeight: '900', letterSpacing: 1 },
     headerSub: { color: 'rgba(255,255,255,0.6)', fontSize: 11, marginTop: 4 },

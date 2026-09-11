@@ -46,6 +46,7 @@ export default function MobileFrame({ children }) {
 const s = StyleSheet.create({
     fullBleed: {
         flex: 1,
+        minHeight: 0,
         position: 'relative',
     },
     backdrop: {
