@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { DraftProvider } from '../context/DraftContext';
@@ -9,7 +9,13 @@ import LoginScreen from '../screens/LoginScreen';
 import HomeScreen from '../screens/HomeScreen';
 import ReviewScreen from '../screens/ReviewScreen';
 
-const Stack = createStackNavigator();
+// native-stack (react-native-screens) em vez de @react-navigation/stack:
+// o stack "clássico" envolve cada tela num PanGestureHandler (pro gesto de
+// arrastar-pra-voltar) que, na web, trava a rolagem por toque de qualquer
+// ScrollView dentro da tela mesmo com gestureEnabled: false — o handler já
+// fica montado e prende o touch-action antes de checar a prop. native-stack
+// não usa gesture-handler pra isso, então o toque volta a rolar normalmente.
+const Stack = createNativeStackNavigator();
 
 const NAV_THEME = {
     dark: true,
@@ -36,10 +42,7 @@ export default function AppNavigator() {
     return (
         <DraftProvider>
             <NavigationContainer theme={NAV_THEME}>
-                {/* gestureEnabled: false — o gesto de "arrastar da borda pra voltar" do
-                    stack navigator, em alguns celulares Android, disputa com o
-                    ScrollView das telas (ex: Extrato) e trava a rolagem por toque. */}
-                <Stack.Navigator screenOptions={{ headerShown: false, animationEnabled: true, gestureEnabled: false }}>
+                <Stack.Navigator screenOptions={{ headerShown: false }}>
                     {!session ? (
                         <Stack.Screen name="Login" component={LoginScreen} />
                     ) : (
