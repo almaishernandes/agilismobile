@@ -300,6 +300,7 @@ export default function EntrySequence({ navigation, account: fixedAccount, prefi
     const [otherAccounts, setOtherAccounts] = useState([]);
     const [costCenters, setCostCenters] = useState([]);
     const [rateioPickerOpen, setRateioPickerOpen] = useState(false);
+    const [rateioCostCenterSearch, setRateioCostCenterSearch] = useState('');
     const [calcOpen, setCalcOpen] = useState(false);
     const [calcDisplay, setCalcDisplay] = useState('');
     const savedDraftRef = useRef(null);
@@ -342,7 +343,12 @@ export default function EntrySequence({ navigation, account: fixedAccount, prefi
     const pickRateioCostCenter = (cc) => {
         setValues(v => ({ ...v, costCenterItems: [...v.costCenterItems, { ...cc, amount: ccRemaining }] }));
         setRateioPickerOpen(false);
+        setRateioCostCenterSearch('');
     };
+    const rateioSearchLower = rateioCostCenterSearch.trim().toLowerCase();
+    const filteredRateioCostCenters = costCenters
+        .filter(cc => !values.costCenterItems.some(it => it.id === cc.id))
+        .filter(cc => !rateioSearchLower || cc.description.toLowerCase().includes(rateioSearchLower) || (cc.full_code || '').toLowerCase().includes(rateioSearchLower));
     const updateCcAmount = (idx, amount) => {
         setValues(v => ({ ...v, costCenterItems: v.costCenterItems.map((it, i) => i === idx ? { ...it, amount } : it) }));
     };
@@ -681,6 +687,8 @@ export default function EntrySequence({ navigation, account: fixedAccount, prefi
                             placeholder="DD/MM/AAAA"
                             placeholderTextColor="#475569"
                             keyboardType="number-pad"
+                            returnKeyType="done"
+                            onSubmitEditing={confirmInstallmentDetail}
                         />
 
                         {values.installments > 1 && (
@@ -791,17 +799,30 @@ export default function EntrySequence({ navigation, account: fixedAccount, prefi
                                 ) : (
                                     <View style={s.rateioPanel}>
                                         <Text style={s.rateioPanelTitle}>SELECIONE OUTRO CENTRO DE CUSTOS</Text>
+                                        <TextInput
+                                            style={s.input}
+                                            value={rateioCostCenterSearch}
+                                            onChangeText={setRateioCostCenterSearch}
+                                            placeholder="Buscar centro de custos..."
+                                            placeholderTextColor="#475569"
+                                            autoFocus
+                                        />
                                         <FlatList
-                                            style={{ maxHeight: 220 }}
-                                            data={costCenters.filter(cc => !values.costCenterItems.some(it => it.id === cc.id))}
+                                            style={{ maxHeight: 220, marginTop: 8 }}
+                                            data={filteredRateioCostCenters}
                                             keyExtractor={i => i.id}
                                             renderItem={({ item }) => (
                                                 <TouchableOpacity style={s.pickRow} onPress={() => pickRateioCostCenter(item)}>
                                                     <Text style={s.pickRowText}>{item.full_code ? `${item.full_code} - ` : ''}{item.description}</Text>
                                                 </TouchableOpacity>
                                             )}
+                                            ListEmptyComponent={
+                                                rateioCostCenterSearch.trim() ? (
+                                                    <Text style={s.photoPlaceholderText}>Não encontrado — cadastre pelo AgilisWeb (Gerenciador → Centro de Custo).</Text>
+                                                ) : null
+                                            }
                                         />
-                                        <TouchableOpacity style={[s.btnSecondary, { marginTop: 8 }]} onPress={() => setRateioPickerOpen(false)}>
+                                        <TouchableOpacity style={[s.btnSecondary, { marginTop: 8 }]} onPress={() => { setRateioPickerOpen(false); setRateioCostCenterSearch(''); }}>
                                             <Text style={s.btnSecondaryText}>Fechar</Text>
                                         </TouchableOpacity>
                                     </View>
