@@ -9,6 +9,8 @@ import LoginScreen from '../screens/LoginScreen';
 import HomeScreen from '../screens/HomeScreen';
 import ReviewScreen from '../screens/ReviewScreen';
 import GestaoScreen from '../screens/GestaoScreen';
+import UserManagerScreen from '../screens/UserManagerScreen';
+import CategoryManagerScreen from '../screens/CategoryManagerScreen';
 
 // native-stack (react-native-screens) em vez de @react-navigation/stack:
 // o stack "clássico" envolve cada tela num PanGestureHandler (pro gesto de
@@ -51,6 +53,8 @@ export default function AppNavigator() {
                             <Stack.Screen name="Home" component={HomeScreen} />
                             <Stack.Screen name="Review" component={ReviewScreen} />
                             <Stack.Screen name="Gestao" component={GestaoScreen} />
+                            <Stack.Screen name="UserManager" component={UserManagerScreen} />
+                            <Stack.Screen name="CategoryManager" component={CategoryManagerScreen} />
                         </>
                     )}
                 </Stack.Navigator>

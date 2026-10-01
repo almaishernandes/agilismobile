@@ -5,15 +5,26 @@ import SimpleListManager from '../components/SimpleListManager';
 // Tela de administração/configurações do Agilis — primeira fase da
 // unificação Web+Mobile num único app (ver conversa de 2026-10-01):
 // cada item aqui é uma tela do Agilis-Web sendo portada aos poucos.
+// kind: 'sheet' abre um BottomSheet aqui mesmo; 'screen' navega para
+// uma tela própria (telas maiores, com formulário completo).
 const ITEMS = [
-    { key: 'account_types', title: 'Tipos de Conta', desc: 'Categorias usadas para agrupar contas (ex: Corrente, Poupança).', icon: '🏷️' },
-    { key: 'institutions', title: 'Instituições', desc: 'Bancos e instituições financeiras das contas.', icon: '🏦' },
+    { key: 'account_types', kind: 'sheet', title: 'Tipos de Conta', desc: 'Categorias usadas para agrupar contas (ex: Corrente, Poupança).', icon: '🏷️' },
+    { key: 'institutions', kind: 'sheet', title: 'Instituições', desc: 'Bancos e instituições financeiras das contas.', icon: '🏦' },
+    { key: 'users', kind: 'screen', route: 'UserManager', title: 'Equipe', desc: 'Usuários do Agilis e seus níveis de acesso.', icon: '👥' },
+    { key: 'cost-centers', kind: 'screen', route: 'CategoryManager', params: { type: 'cost-centers' }, title: 'Centros de Custo', desc: 'Classificação de receitas e despesas.', icon: '🏷️' },
+    { key: 'chart-of-accounts', kind: 'screen', route: 'CategoryManager', params: { type: 'chart-of-accounts' }, title: 'Plano de Contas', desc: 'Estrutura contábil usada nos lançamentos.', icon: '📑' },
+    { key: 'vendors', kind: 'screen', route: 'CategoryManager', params: { type: 'vendors' }, title: 'Fornecedores', desc: 'Cadastro de fornecedores e prestadores.', icon: '🧾' },
 ];
 
 export default function GestaoScreen({ navigation }) {
     const [openManager, setOpenManager] = useState(null);
 
-    const activeItem = ITEMS.find((i) => i.key === openManager);
+    const activeSheetItem = ITEMS.find((i) => i.kind === 'sheet' && i.key === openManager);
+
+    const handlePress = (item) => {
+        if (item.kind === 'sheet') setOpenManager(item.key);
+        else navigation.navigate(item.route, item.params);
+    };
 
     return (
         <View style={s.container}>
@@ -27,7 +38,7 @@ export default function GestaoScreen({ navigation }) {
 
             <ScrollView contentContainerStyle={s.list}>
                 {ITEMS.map((item) => (
-                    <TouchableOpacity key={item.key} style={s.card} onPress={() => setOpenManager(item.key)} activeOpacity={0.8}>
+                    <TouchableOpacity key={item.key} style={s.card} onPress={() => handlePress(item)} activeOpacity={0.8}>
                         <Text style={s.cardIcon}>{item.icon}</Text>
                         <View style={{ flex: 1 }}>
                             <Text style={s.cardTitle}>{item.title}</Text>
@@ -38,11 +49,11 @@ export default function GestaoScreen({ navigation }) {
                 ))}
             </ScrollView>
 
-            {activeItem && (
+            {activeSheetItem && (
                 <SimpleListManager
                     visible={!!openManager}
-                    title={activeItem.title}
-                    tableName={activeItem.key}
+                    title={activeSheetItem.title}
+                    tableName={activeSheetItem.key}
                     onClose={() => setOpenManager(null)}
                 />
             )}
