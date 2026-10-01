@@ -149,9 +149,14 @@ export default function HomeScreen({ navigation }) {
                     <Text style={s.logo}>Agilis Mobile</Text>
                     <Text style={s.headerSub}>Movimentação/Lançamentos</Text>
                 </View>
-                <TouchableOpacity onPress={signOut} style={s.logoutBtn}>
-                    <Text style={s.logoutText}>Sair</Text>
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <TouchableOpacity onPress={() => navigation.navigate('Gestao')} style={s.logoutBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                        <Text style={s.gearIcon}>⚙️</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={signOut} style={s.logoutBtn}>
+                        <Text style={s.logoutText}>Sair</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
 
             <View style={s.sectionBody}>
@@ -309,6 +314,7 @@ const s = StyleSheet.create({
     headerSub: { color: 'rgba(255,255,255,0.6)', fontSize: 11, marginTop: 4 },
     logoutBtn: { padding: 8 },
     logoutText: { color: '#CCFF00', fontSize: 13 },
+    gearIcon: { fontSize: 16 },
 
     groupList: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
     groupIntro: { color: '#94a3b8', fontSize: 12, marginBottom: 12, textAlign: 'center' },
